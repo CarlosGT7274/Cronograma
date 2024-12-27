@@ -18,6 +18,7 @@ import {
   addWeeks,
   isSameMonth,
   subMonths,
+  parseISO,
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { Tarea, TareaService } from "@/services/tareaService";
@@ -80,8 +81,7 @@ export const CalendarioTab: React.FC = () => {
     if (firstDayOfWeek !== 1) {
       // Si no es lunes
       currentDate.setDate(
-        currentDate.getDate() -
-          (firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1),
+        currentDate.getDate() - (firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1),
       );
     }
 
@@ -118,7 +118,6 @@ export const CalendarioTab: React.FC = () => {
     return weeks;
   }
   function generateWeekNumbers(year) {
-
     const months = eachMonthOfInterval({
       start: startDate,
       end: addMonths(startDate, MONTHS_TO_SHOW - 1),
@@ -136,56 +135,90 @@ export const CalendarioTab: React.FC = () => {
     const octubreToDeciembre = ["OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
     const eneroToSeptiembre = months.slice(0, 9);
 
+    console.log(startDate); //Wed Dec 25 2024 16:35:30 GMT-0600 (hora estándar central)
     const mesesSiguientes = eachMonthOfInterval({
-        start: startDate,
-        end: addMonths(startDate, 2)
+      start: addMonths(
+        new Date(startDate.getFullYear(), startDate.getMonth(), 1),
+        1,
+      ),
+      end: addMonths(
+        new Date(startDate.getFullYear(), startDate.getMonth(), 1),
+        2,
+      ),
     });
 
     const mesesAnteriores = eachMonthOfInterval({
-        start: subMonths(startDate, 9),
-        end: subMonths(startDate, 1)
+      start: subMonths(
+        new Date(startDate.getFullYear(), startDate.getMonth(), 1),
+        9,
+      ),
+      end: new Date(startDate.getFullYear(), startDate.getMonth(), 1),
     });
-    const allMonths = [...mesesSiguientes, ...mesesAnteriores];
+
+    const adjustedStartDate = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      1,
+    );
+
+    console.log(adjustedStartDate);
+    // Intervalo de 11 meses
+    const meses = eachMonthOfInterval({
+      start: adjustedStartDate,
+      end: addMonths(adjustedStartDate, 11), // 11 meses en total
+    });
+
+    const allMonths = meses;
 
     // console.log(mesesinicio)
     // console.log(restoMeses)
     // console.log(allMonths)
-    
-    // console.log(months)
 
+    // console.log(months)
 
     // months.forEach((month) => {
     //   console.log(finalResult)
     //   finalResult[month] = result[month];
     // });
-    
+
+    // allMonths.forEach((month) => {
+    //   finalResult[month] = getWeeksInMonth(
+    //     month.getFullYear(),
+    //     month.getMonth(),
+    //   );
+    // });
+
     allMonths.forEach((month) => {
-      // console.log(result)
-        finalResult[month] = getWeeksInMonth(month.getFullYear(), month.getMonth());
+      const key = month.toISOString().slice(0, 10); // Solo año y mes
+      finalResult[key] = getWeeksInMonth(month.getFullYear(), month.getMonth());
     });
 
     return finalResult;
   }
 
   const monthWeeks = generateWeekNumbers(getYear(startDate));
-  // console.log(monthWeeks)
+  console.log(monthWeeks);
+
   // const informacion = generateWeekNumbers(2025);
   // console.log(informacion)
   // Object.entries(informacion).forEach(([month, weeks]) => {
   //   console.log(`${month}: ${weeks.join(", ")}`);
   // });
-
+  //
   const getTaskPosition = (tarea: Tarea) => {
     let cells = [];
 
     tarea.meses.forEach((mes) => {
       mes.semanas.forEach((semana) => {
         if (semana.estado) {
-          const weekIndex = allWeeks.findIndex(
+          // Encuentra el índice del mes en allWeeks
+          let weekIndex = allWeeks.findIndex(
             (week) => format(week, "yyyy-MM") === mes.mes,
           );
 
           if (weekIndex !== -1) {
+            weekIndex += semana.numero - 1;
+
             cells.push({
               month: mes.mes,
               week: semana.numero,
@@ -196,43 +229,60 @@ export const CalendarioTab: React.FC = () => {
       });
     });
 
-    // console.log(cells);
+    console.log(cells);
 
     return cells;
   };
 
-  const allWeeks = months.flatMap((month) =>
-    eachWeekOfInterval({ start: startOfMonth(month), end: endOfMonth(month) }),
-  );
+  // const allWeeks = months.flatMap((month) =>
+  //   eachWeekOfInterval({ start: startOfMonth(month), end: endOfMonth(month) }),
+  // );
+  //
+  // const allWeeks = []
+  //
+  // months.forEach((monthName, index) => {
+  //   const weeksNumber = getWeeksInMonth(getYear(startDate), index);
+  //   [...weeksNumber].forEach((index) => {
+  //     allWeeks[index] = eachWeekOfInterval( {start: startDate, end: addMonths(startDate, MONTHS_TO_SHOW - 1) })[index]
+  //   })
+  // })
 
-  console.log(allWeeks)
+  const allWeeks = [];
+  eachWeekOfInterval({
+    start: new Date(startDate).setDate(1),
+    end: addMonths(new Date(startDate).setDate(1), MONTHS_TO_SHOW),
+  }).forEach((weekStart) => {
+    allWeeks.push(weekStart); // Simplemente agrega los valores al arreglo
+  });
 
-  const exportToExcel = () => {
-    const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.json_to_sheet(
-      tareas.map((tarea) => ({
-        Pos: tarea.pos,
-        Equipo: tarea.equipo,
-        Area: tarea.area,
-        Servicios: tarea.servicios,
-        FechaInicio: format(
-          allWeeks[getTaskPosition(tarea).start],
-          "dd/MM/yyyy",
-        ),
-        FechaFin: format(allWeeks[getTaskPosition(tarea).end], "dd/MM/yyyy"),
-      })),
-    );
+  console.log(allWeeks);
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Cronograma");
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-    const data = new Blob([excelBuffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-    saveAs(data, "cronograma_proyecto.xlsx");
-  };
+  // const exportToExcel = () => {
+  //   const workbook = XLSX.utils.book_new();
+  //   const worksheet = XLSX.utils.json_to_sheet(
+  //     tareas.map((tarea) => ({
+  //       Pos: tarea.pos,
+  //       Equipo: tarea.equipo,
+  //       Area: tarea.area,
+  //       Servicios: tarea.servicios,
+  //       FechaInicio: format(
+  //         allWeeks[getTaskPosition(tarea).start],
+  //         "dd/MM/yyyy",
+  //       ),
+  //       FechaFin: format(allWeeks[getTaskPosition(tarea).end], "dd/MM/yyyy"),
+  //     })),
+  //   );
+  //
+  //   XLSX.utils.book_append_sheet(workbook, worksheet, "Cronograma");
+  //   const excelBuffer = XLSX.write(workbook, {
+  //     bookType: "xlsx",
+  //     type: "array",
+  //   });
+  //   const data = new Blob([excelBuffer], {
+  //     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  //   });
+  //   saveAs(data, "cronograma_proyecto.xlsx");
+  // };
 
   if (loading) {
     return <div className="p-6 text-center">Cargando tareas...</div>;
@@ -248,16 +298,23 @@ export const CalendarioTab: React.FC = () => {
         <h2 className="text-2xl font-bold">Cronograma </h2>
         <input type="date" onChange={handleDateChange} />
         <div>
-          <button onClick={() => setModalOpen(true)}>Nueva tarea</button>
+          <button
+            className="bg-lime-400 hover:bg-teal-500 text-white font-bold py-2 px-4 rounded"
+            onClick={() => setModalOpen(true)}
+          >
+            Nueva tarea
+          </button>
 
           <TaskModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
         </div>
+        {/*
         <button
           onClick={exportToExcel}
           className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
         >
           Exportar a Excel
         </button>
+        */}
       </div>
       <div className="overflow-x-auto">
         <div
@@ -363,7 +420,8 @@ export const CalendarioTab: React.FC = () => {
                     }}
                   >
                     <div className="font-bold text-center py-2">
-                      {format(new Date(date), "MMMM yyyy", { locale: es })}
+                      {/* {date} */}
+                      {format(parseISO(date), "MMMM yyyy", { locale: es })}
                     </div>
 
                     <div style={{ display: "flex" }}>
@@ -396,7 +454,6 @@ export const CalendarioTab: React.FC = () => {
                     }}
                   >
                     {allWeeks.map((_, weekIndex) => (
-                      
                       <div
                         key={weekIndex}
                         style={{
