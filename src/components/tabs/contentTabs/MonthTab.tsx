@@ -24,28 +24,58 @@ export const MonthTab = ({ month }: { month: string }) => {
   const [searchTerm, setSearchTerm] = useState('')
 
   // Memoize filtered tasks to avoid unnecessary re-renders
-  const monthTasks = useMemo(() => {
-    return tasks
-      .filter(task =>
-        // console.log(task.meses.some(m => {
-        //   console.log(new Date(`${m.mes}`).toLocaleString("default", { month: "long" }));
-        //   console.log(month.toLowerCase())
-        // })) &&
-        // console.log(task.meses.some(m => new Date(`${m.mes}`).toLocaleString("default", { month: "long" }) === month.toLowerCase())) &&
-        // console.log(task) &&
-        task.meses.some(m => new Date(`${m.mes}`).toLocaleString("default", { month: "long" }) === month.toLowerCase())
-        // (filterStatus === 'all' || task.status === filterStatus) &&
-        // (task.area.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        //  task.equipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        //  task.servicios.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-    // .sort((a, b) => {
-    //   if (sortBy === 'status') {
-    //     return a.status.localeCompare(b.status)
-    //   }
-    //   return a[sortBy].localeCompare(b[sortBy])
-    // })
-  }, [tasks, month, filterStatus, sortBy, searchTerm])
+  // const monthTasks = useMemo(() => {
+  //   return tasks
+  //     .filter(task =>
+  //       // console.log(task.meses.some(m => {
+  //       //   console.log(new Date(`${m.mes}`).toLocaleString("default", { month: "long" }));
+  //       //   console.log(month.toLowerCase())
+  //       // })) &&
+  //       // console.log(task.meses.some(m => new Date(`${m.mes}`).toLocaleString("default", { month: "long" }) === month.toLowerCase())) &&
+  //       // console.log(task) &&
+  //       task.meses.some(m => new Date(`${m.mes}`).toLocaleString("default", { month: "long" }) === month.toLowerCase()) &&
+  //        (filterStatus === 'all' || task.status === filterStatus) &&
+  //       (task.area.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //        task.equipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //        task.servicios.toLowerCase().includes(searchTerm.toLowerCase()))
+  //     )
+  //   .sort((a, b) => {
+  //     if (sortBy === 'status') {
+  //       return a.status.localeCompare(b.status)
+  //     }
+  //     return a[sortBy].localeCompare(b[sortBy])
+  //   })
+  // }, [tasks, month, filterStatus, sortBy, searchTerm])
+  
+const monthTasks = useMemo(() => {
+  return tasks
+    .filter(task => {
+      return task.meses.some(m => {
+        // Extraer solo el mes del formato "YYYY-MM" (ej: "2025-03" -> "03")
+        const monthFromTask = m.mes.split('-')[1];
+        
+        // Convertir el nombre del mes de la pestaña a su número correspondiente
+        const monthNumbers = {
+          'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04',
+          'mayo': '05', 'junio': '06', 'julio': '07', 'agosto': '08',
+          'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12'
+        };
+        
+        // Comparar solo el mes, ignorando el año
+        return monthFromTask === monthNumbers[month.toLowerCase()];
+      }) && 
+      (filterStatus === 'all' || task.status === filterStatus) &&
+      (task.area.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       task.equipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       task.servicios.toLowerCase().includes(searchTerm.toLowerCase()));
+    })
+    .sort((a, b) => {
+      if (sortBy === 'status') {
+        return a.status.localeCompare(b.status);
+      }
+      return a[sortBy].localeCompare(b[sortBy]);
+    });
+}, [tasks, month, filterStatus, sortBy, searchTerm]);
 
   console.log(monthTasks)
 

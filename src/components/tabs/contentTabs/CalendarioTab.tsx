@@ -135,7 +135,6 @@ export const CalendarioTab: React.FC = () => {
     const octubreToDeciembre = ["OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
     const eneroToSeptiembre = months.slice(0, 9);
 
-    console.log(startDate); //Wed Dec 25 2024 16:35:30 GMT-0600 (hora estándar central)
     const mesesSiguientes = eachMonthOfInterval({
       start: addMonths(
         new Date(startDate.getFullYear(), startDate.getMonth(), 1),
@@ -161,7 +160,6 @@ export const CalendarioTab: React.FC = () => {
       1,
     );
 
-    console.log(adjustedStartDate);
     // Intervalo de 11 meses
     const meses = eachMonthOfInterval({
       start: adjustedStartDate,
@@ -197,7 +195,6 @@ export const CalendarioTab: React.FC = () => {
   }
 
   const monthWeeks = generateWeekNumbers(getYear(startDate));
-  console.log(monthWeeks);
 
   // const informacion = generateWeekNumbers(2025);
   // console.log(informacion)
@@ -229,8 +226,6 @@ export const CalendarioTab: React.FC = () => {
       });
     });
 
-    console.log(cells);
-
     return cells;
   };
 
@@ -255,34 +250,17 @@ export const CalendarioTab: React.FC = () => {
     allWeeks.push(weekStart); // Simplemente agrega los valores al arreglo
   });
 
-  console.log(allWeeks);
 
-  // const exportToExcel = () => {
-  //   const workbook = XLSX.utils.book_new();
-  //   const worksheet = XLSX.utils.json_to_sheet(
-  //     tareas.map((tarea) => ({
-  //       Pos: tarea.pos,
-  //       Equipo: tarea.equipo,
-  //       Area: tarea.area,
-  //       Servicios: tarea.servicios,
-  //       FechaInicio: format(
-  //         allWeeks[getTaskPosition(tarea).start],
-  //         "dd/MM/yyyy",
-  //       ),
-  //       FechaFin: format(allWeeks[getTaskPosition(tarea).end], "dd/MM/yyyy"),
-  //     })),
-  //   );
-  //
-  //   XLSX.utils.book_append_sheet(workbook, worksheet, "Cronograma");
-  //   const excelBuffer = XLSX.write(workbook, {
-  //     bookType: "xlsx",
-  //     type: "array",
-  //   });
-  //   const data = new Blob([excelBuffer], {
-  //     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  //   });
-  //   saveAs(data, "cronograma_proyecto.xlsx");
-  // };
+    const tasksByCategory = useMemo(() => {
+    const grouped = {};
+    tareas.forEach(tarea => {
+      if (!grouped[tarea.categoria]) {
+        grouped[tarea.categoria] = [];
+      }
+      grouped[tarea.categoria].push(tarea);
+    });
+    return grouped;
+  }, [tareas]);
 
   if (loading) {
     return <div className="p-6 text-center">Cargando tareas...</div>;
@@ -307,14 +285,7 @@ export const CalendarioTab: React.FC = () => {
 
           <TaskModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
         </div>
-        {/*
-        <button
-          onClick={exportToExcel}
-          className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
-        >
-          Exportar a Excel
-        </button>
-        */}
+        
       </div>
       <div className="overflow-x-auto">
         <div
