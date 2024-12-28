@@ -114,11 +114,24 @@ export const MonthTab = ({ month }: { month: string }) => {
           );
         });
       })
-      .sort((a, b) => {
+            .sort((a, b) => {
+        // Validar que las propiedades existen y son strings
         if (sortBy === "status") {
+          if (!a.status || !b.status) return 0;
           return a.status.localeCompare(b.status);
         }
-        return a[sortBy].localeCompare(b[sortBy]);
+        
+        const aValue = a[sortBy];
+        const bValue = b[sortBy];
+        
+        // Si alguno de los valores no existe o no es string
+        if (typeof aValue !== 'string' || typeof bValue !== 'string') {
+          if (!aValue) return 1;  // Mover valores undefined/null al final
+          if (!bValue) return -1; // Mover valores undefined/null al final
+          return 0;
+        }
+        
+        return aValue.localeCompare(bValue);
       });
   }, [tasks, month, filterStatus, sortBy, searchTerm]);
 
