@@ -314,64 +314,71 @@ export const CalendarioTab: React.FC = () => {
                   </div>
                 ))}
               </div>
-              {tareas.map((tarea, index) => (
-                <div
-                  key={index}
-                  style={{
-                    height: `${ROW_HEIGHT}px`,
-                    display: "flex",
-                    borderBottom: "1px solid #e2e8f0",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "125px",
-                      borderRight: "1px solid #e2e8f0",
-                      padding: "2px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {tarea.pos}
-                  </div>
-                  <div
-                    style={{
-                      width: "125px",
-                      borderRight: "1px solid #e2e8f0",
-                      padding: "2px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {tarea.equipo}
-                  </div>
-                  <div
-                    style={{
-                      width: "125px",
-                      borderRight: "1px solid #e2e8f0",
-                      padding: "2px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {tarea.area}
-                  </div>
-                  <div
-                    style={{
-                      width: "125px",
-                      borderRight: "1px solid #e2e8f0",
-                      padding: "2px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {tarea.servicios}
-                  </div>
+              {Object.entries(tasksByCategory).map(([categoria, tareas]) => (
+              <div key={categoria} >
+                <div className="bg-gray-100 py-2 px-4 font-semibold border-b border-gray-300">
+                    {categoria}
                 </div>
+                  {tareas.map((tarea, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        height: `${ROW_HEIGHT}px`,
+                        display: "flex",
+                        borderBottom: "1px solid #e2e8f0",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "125px",
+                          borderRight: "1px solid #e2e8f0",
+                          padding: "2px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {tarea.pos}
+                      </div>
+                      <div
+                        style={{
+                          width: "125px",
+                          borderRight: "1px solid #e2e8f0",
+                          padding: "2px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {tarea.equipo}
+                      </div>
+                      <div
+                        style={{
+                          width: "125px",
+                          borderRight: "1px solid #e2e8f0",
+                          padding: "2px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {tarea.area}
+                      </div>
+                      <div
+                        style={{
+                          width: "125px",
+                          borderRight: "1px solid #e2e8f0",
+                          padding: "2px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {tarea.servicios}
+                      </div>
+                    </div>
+                  ))}
+              </div>
               ))}
             </div>
             <div>
@@ -412,53 +419,64 @@ export const CalendarioTab: React.FC = () => {
                   </div>
                 ))}
               </div>
-              {tareas.map((tarea, tareaIndex) => {
-                const cells = getTaskPosition(tarea);
-                console.log();
-                return (
-                  <div
-                    key={tareaIndex}
-                    style={{
-                      height: `${ROW_HEIGHT}px`,
-                      position: "relative",
-                      borderBottom: "1px solid #e2e8f0",
-                    }}
-                  >
-                    {allWeeks.map((_, weekIndex) => (
+                 {Object.entries(tasksByCategory).map(([categoria, categoriaTareas]) => (
+                <React.Fragment key={categoria}>
+                  {/* Category Header Space */}
+                  <div 
+                    className="bg-gray-100 border-b border-gray-300"
+                    style={{ height: "40px" }}
+                  />
+                  
+                  {/* Category Tasks */}
+                  {categoriaTareas.map((tarea, tareaIndex) => {
+                    const cells = getTaskPosition(tarea);
+                    return (
                       <div
-                        key={weekIndex}
+                        key={tareaIndex}
                         style={{
-                          position: "absolute",
-                          left: `${weekIndex * CELL_WIDTH}px`,
-                          width: `${CELL_WIDTH}px`,
-                          height: "100%",
-                          borderRight: "1px solid #e2e8f0",
+                          height: `${ROW_HEIGHT}px`,
+                          position: "relative",
                           borderBottom: "1px solid #e2e8f0",
-                          backgroundColor:
-                            weekIndex % 2 === 0 ? "#f9fafb" : "white",
                         }}
-                      />
-                    ))}
+                      >
+                        {/* Background cells */}
+                        {allWeeks.map((_, weekIndex) => (
+                          <div
+                            key={weekIndex}
+                            style={{
+                              position: "absolute",
+                              left: `${weekIndex * CELL_WIDTH}px`,
+                              width: `${CELL_WIDTH}px`,
+                              height: "100%",
+                              borderRight: "1px solid #e2e8f0",
+                              backgroundColor: weekIndex % 2 === 0 ? "#f9fafb" : "white",
+                            }}
+                          />
+                        ))}
 
-                    {cells.map((cell, cellIndex) => (
-                      <div
-                        key={cellIndex}
-                        style={{
-                          position: "absolute",
-                          left: `${cell.weekIndex * CELL_WIDTH}px`,
-                          width: `${CELL_WIDTH}px`,
-                          height: "80%",
-                          top: "10%",
-                          backgroundColor: "#3b82f6",
-                          borderRadius: "4px",
-                          zIndex: 10,
-                        }}
-                        title={`${tarea.servicios}: ${cell.month} - Semana ${cell.week}`}
-                      />
-                    ))}
-                  </div>
-                );
-              })}
+                        {/* Task cells */}
+                        {cells.map((cell, cellIndex) => (
+                          <div
+                            key={cellIndex}
+                            style={{
+                              position: "absolute",
+                              left: `${cell.weekIndex * CELL_WIDTH}px`,
+                              width: `${CELL_WIDTH}px`,
+                              height: "80%",
+                              top: "10%",
+                              backgroundColor: "#3b82f6",
+                              borderRadius: "4px",
+                              zIndex: 10,
+                            }}
+                            title={`${tarea.servicios}: ${cell.month} - Semana ${cell.week}`}
+                            className="hover:opacity-80 transition-opacity duration-200"
+                          />
+                        ))}
+                      </div>
+                    );
+                  })}
+                </React.Fragment>
+              ))}
             </div>
           </div>
         </div>

@@ -16,6 +16,10 @@ export interface Tarea {
   startDate: string;
   endDate: string;
   status: 'completado' | 'en-progreso' | 'pendiente' | 'no-iniciado';
+  categoria:
+    | "EQUIPOS FORJA"
+    | "EQUIPOS MAQUINADO"
+    | "EQUIPO AREAS ADMINISTRATIVAS";
   description: string;
   comments: Comentario[];
 }

@@ -1,27 +1,36 @@
-import { useEffect, useState, useMemo } from 'react';
-import { format, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { TareaService, Tarea } from '@/services/tareaService';
+import { useEffect, useState, useMemo } from "react";
+import { format, parseISO } from "date-fns";
+import { es } from "date-fns/locale";
+import { TareaService, Tarea } from "@/services/tareaService";
 
 // Helper function to get status color
-const getStatusColor = (status: Tarea['status']) => {
+const getStatusColor = (status: Tarea["status"]) => {
   switch (status) {
-    case 'completado': return 'bg-green-500';
-    case 'en-progreso': return 'bg-blue-500';
-    case 'pendiente': return 'bg-yellow-500';
-    case 'no-iniciado': return 'bg-gray-500';
-    default: return 'bg-gray-500';
+    case "completado":
+      return "bg-green-500";
+    case "en-progreso":
+      return "bg-blue-500";
+    case "pendiente":
+      return "bg-yellow-500";
+    case "no-iniciado":
+      return "bg-gray-500";
+    default:
+      return "bg-gray-500";
   }
 };
 
 export const MonthTab = ({ month }: { month: string }) => {
-  const [tasks, setTasks] = useState<Tarea[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [newComments, setNewComments] = useState<{ [key: string]: string }>({})
-  const [filterStatus, setFilterStatus] = useState<Tarea['status'] | 'all'>('all')
-  const [sortBy, setSortBy] = useState<'startDate' | 'endDate' | 'status'>('startDate')
-  const [searchTerm, setSearchTerm] = useState('')
+  const [tasks, setTasks] = useState<Tarea[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [newComments, setNewComments] = useState<{ [key: string]: string }>({});
+  const [filterStatus, setFilterStatus] = useState<Tarea["status"] | "all">(
+    "all",
+  );
+  const [sortBy, setSortBy] = useState<"startDate" | "endDate" | "status">(
+    "startDate",
+  );
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Memoize filtered tasks to avoid unnecessary re-renders
   // const monthTasks = useMemo(() => {
@@ -46,38 +55,84 @@ export const MonthTab = ({ month }: { month: string }) => {
   //     return a[sortBy].localeCompare(b[sortBy])
   //   })
   // }, [tasks, month, filterStatus, sortBy, searchTerm])
-  
-const monthTasks = useMemo(() => {
-  return tasks
-    .filter(task => {
-      return task.meses.some(m => {
-        // Extraer solo el mes del formato "YYYY-MM" (ej: "2025-03" -> "03")
-        const monthFromTask = m.mes.split('-')[1];
-        
-        // Convertir el nombre del mes de la pestaña a su número correspondiente
-        const monthNumbers = {
-          'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04',
-          'mayo': '05', 'junio': '06', 'julio': '07', 'agosto': '08',
-          'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12'
-        };
-        
-        // Comparar solo el mes, ignorando el año
-        return monthFromTask === monthNumbers[month.toLowerCase()];
-      }) && 
-      (filterStatus === 'all' || task.status === filterStatus) &&
-      (task.area.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       task.equipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       task.servicios.toLowerCase().includes(searchTerm.toLowerCase()));
-    })
-    .sort((a, b) => {
-      if (sortBy === 'status') {
-        return a.status.localeCompare(b.status);
-      }
-      return a[sortBy].localeCompare(b[sortBy]);
-    });
-}, [tasks, month, filterStatus, sortBy, searchTerm]);
 
-  console.log(monthTasks)
+  // const monthTasks = useMemo(() => {
+  //   return tasks
+  //     .filter(task => {
+  //       return task.meses.some(m => {
+  //         // Extraer solo el mes del formato "YYYY-MM" (ej: "2025-03" -> "03")
+  //         const monthFromTask = m.mes.split('-')[1];
+  //
+  //         // Convertir el nombre del mes de la pestaña a su número correspondiente
+  //         const monthNumbers = {
+  //           'enero': '01', 'febrero': '02', 'marzo': '03', 'abril': '04',
+  //           'mayo': '05', 'junio': '06', 'julio': '07', 'agosto': '08',
+  //           'septiembre': '09', 'octubre': '10', 'noviembre': '11', 'diciembre': '12'
+  //         };
+  //
+  //         // Comparar solo el mes, ignorando el año
+  //         return monthFromTask === monthNumbers[month.toLowerCase()];
+  //       }) &&
+  //       (filterStatus === 'all' || task.status === filterStatus) &&
+  //       (task.area.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //        task.equipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //        task.servicios.toLowerCase().includes(searchTerm.toLowerCase()));
+  //     })
+  //     .sort((a, b) => {
+  //       if (sortBy === 'status') {
+  //         return a.status.localeCompare(b.status);
+  //       }
+  //       return a[sortBy].localeCompare(b[sortBy]);
+  //     });
+  // }, [tasks, month, filterStatus, sortBy, searchTerm]);
+
+  const monthTasks = useMemo(() => {
+    return tasks
+      .filter((task) => {
+        return task.meses.some((m) => {
+          const [year, monthNumber] = m.mes.split("-");
+          const monthNumbers = {
+            enero: "01",
+            febrero: "02",
+            marzo: "03",
+            abril: "04",
+            mayo: "05",
+            junio: "06",
+            julio: "07",
+            agosto: "08",
+            septiembre: "09",
+            octubre: "10",
+            noviembre: "11",
+            diciembre: "12",
+          };
+          return (
+            monthNumber === monthNumbers[month.toLowerCase()] &&
+            (filterStatus === "all" || task.status === filterStatus) &&
+            (task.area.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              task.equipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              task.servicios.toLowerCase().includes(searchTerm.toLowerCase()))
+          );
+        });
+      })
+      .sort((a, b) => {
+        if (sortBy === "status") {
+          return a.status.localeCompare(b.status);
+        }
+        return a[sortBy].localeCompare(b[sortBy]);
+      });
+  }, [tasks, month, filterStatus, sortBy, searchTerm]);
+
+  console.log(monthTasks);
+
+    const tasksByCategory = useMemo(() => {
+    return monthTasks.reduce((acc, task) => {
+      if (!acc[task.categoria]) {
+        acc[task.categoria] = [];
+      }
+      acc[task.categoria].push(task);
+      return acc;
+    }, {} as Record<string, Tarea[]>);
+  }, [monthTasks]);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -87,7 +142,7 @@ const monthTasks = useMemo(() => {
         setTasks(allTasks);
       } catch (err) {
         console.error(err);
-        setError('Error al cargar las tareas. Por favor, intenta nuevamente.');
+        setError("Error al cargar las tareas. Por favor, intenta nuevamente.");
       } finally {
         setLoading(false);
       }
@@ -104,25 +159,23 @@ const monthTasks = useMemo(() => {
         const updatedTask = await TareaService.addComment(taskId, commentText);
 
         // Update local state
-        setTasks(prevTasks =>
-          prevTasks.map(task =>
-            task._id === taskId ? updatedTask : task
-          )
+        setTasks((prevTasks) =>
+          prevTasks.map((task) => (task._id === taskId ? updatedTask : task)),
         );
 
         // Clear comment input
-        setNewComments(prev => ({ ...prev, [taskId]: '' }));
+        setNewComments((prev) => ({ ...prev, [taskId]: "" }));
       }
     } catch (err) {
-      console.error('Error adding comment', err);
-      setError('No se pudo agregar el comentario. Intente nuevamente.');
+      console.error("Error adding comment", err);
+      setError("No se pudo agregar el comentario. Intente nuevamente.");
     }
   };
 
   const handleCommentChange = (taskId: string, text: string) => {
-    setNewComments(prev => ({
+    setNewComments((prev) => ({
       ...prev,
-      [taskId]: text
+      [taskId]: text,
     }));
   };
 
@@ -138,59 +191,91 @@ const monthTasks = useMemo(() => {
     return <div className="p-6 text-center">No hay tareas para {month}.</div>;
   }
 
+
+
+
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-6">Tareas de {month.charAt(0).toUpperCase() + month.slice(1)}</h2>
-      {monthTasks.map((task) => (
-        <div key={task._id} className="border rounded-lg p-4 mb-4">
-          <div className="flex justify-between items-center mb-2">
-            <div>
-              <h3 className="text-lg font-semibold">{task.area} - {task.equipo}</h3>
-              <p className="text-sm text-gray-600">{task.description}</p>
-            </div>
-            <span
-              className={`px-2 py-1 rounded text-white text-xs ${getStatusColor(task.status)}`}
+      <h2 className="text-2xl font-bold mb-6">
+        Tareas de {month.charAt(0).toUpperCase() + month.slice(1)}
+      </h2>
+      {Object.entries(tasksByCategory).map(([categoria, tasks]) => (
+        <div key={categoria} className="mb-8">
+          <h3 className="text-xl font-semibold mb-4">{categoria}</h3>
+          {tasks.map((task: Tarea) => (
+            <div
+              key={task._id}
+              className="border rounded-lg p-4 mb-4 shadow-sm hover:shadow-md transition-shadow duration-200"
             >
-              {task.status}
-            </span>
-          </div>
-          <div className="mb-2">
-            <div className="text-sm text-gray-500 mt-1">
-
-            </div>
-          </div>
-          <div className="mt-4">
-            <h4 className="font-medium mb-2">Comentarios</h4>
-            {task.comments && task.comments.length > 0 ? (
-              task.comments.map((comment, index) => (
-                <div key={index} className="bg-gray-100 p-2 rounded mb-2">
-                  <strong>Usuario: </strong>
-                  <span className="text-sm text-gray-600">
-                    ({format(new Date(comment.createdAt || new Date()), 'dd MMM HH:mm', { locale: es })})
-                  </span>
-                  <p>{comment.text}</p>
+              <div className="flex justify-between items-center mb-2">
+                <div>
+                  <h4 className="text-lg font-semibold">
+                    {task.area} - {task.equipo}
+                  </h4>
+                  <p className="text-sm text-gray-600">{task.servicios}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Año: {task.meses[0].mes.split("-")[0]}
+                  </p>
                 </div>
-              ))
-            ) : (
-              <p className="text-gray-500 italic">No hay comentarios</p>
-            )}
-            <div className="flex mt-2">
-              <input
-                type="text"
-                placeholder="Añadir comentario..."
-                className="flex-grow border rounded-l p-2"
-                value={newComments[task._id || ''] || ''}
-                onChange={(e) => handleCommentChange(task._id || '', e.target.value)}
-              />
-              <button
-                className="bg-blue-500 text-white px-4 rounded-r"
-                onClick={() => task._id && addComment(task._id)}
-                disabled={!newComments[task._id || ''] || !newComments[task._id || ''].trim()}
-              >
-                Enviar
-              </button>
+                <span
+                  className={`px-2 py-1 rounded text-white text-xs ${getStatusColor(task.status)}`}
+                >
+                  {task.status}
+                </span>
+              </div>
+              <p className="text-sm text-gray-700 mb-2">{task.description}</p>
+              <div className="mt-4">
+                <h5 className="font-medium mb-2">Comentarios</h5>
+                {task.comments && task.comments.length > 0 ? (
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {task.comments.map((comment, index) => (
+                      <div
+                        key={index}
+                        className="bg-gray-100 p-2 rounded text-sm"
+                      >
+                        <span className="font-semibold">Usuario: </span>
+                        <span className="text-gray-600">
+                          (
+                          {format(
+                            new Date(comment.createdAt || new Date()),
+                            "dd MMM HH:mm",
+                            { locale: es },
+                          )}
+                          )
+                        </span>
+                        <p className="mt-1">{comment.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 italic text-sm">
+                    No hay comentarios
+                  </p>
+                )}
+                <div className="flex mt-2">
+                  <input
+                    type="text"
+                    placeholder="Añadir comentario..."
+                    className="flex-grow border rounded-l p-2 text-sm"
+                    value={newComments[task._id || ""] || ""}
+                    onChange={(e) =>
+                      handleCommentChange(task._id || "", e.target.value)
+                    }
+                  />
+                  <button
+                    className="bg-blue-500 text-white px-4 rounded-r text-sm hover:bg-blue-600 transition-colors duration-200"
+                    onClick={() => task._id && addComment(task._id)}
+                    disabled={
+                      !newComments[task._id || ""] ||
+                      !newComments[task._id || ""].trim()
+                    }
+                  >
+                    Enviar
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       ))}
     </div>

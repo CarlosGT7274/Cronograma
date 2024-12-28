@@ -1,175 +1,193 @@
-import React, { useState, useEffect } from 'react'
-import { TareaService, Tarea } from '@/services/tareaService'
-import { format } from 'date-fns'
+import React, { useState, useEffect } from "react";
+import { TareaService, Tarea } from "@/services/tareaService";
+import { format } from "date-fns";
+import toast from "react-hot-toast";
 
 interface Week {
-  numero: number
-  estado: boolean
+  numero: number;
+  estado: boolean;
 }
 
 interface Month {
-  mes: string
-  semanas: Week[]
+  mes: string;
+  semanas: Week[];
 }
 
 interface Tarea {
-  pos: string
-  equipo: string
-  area: string
-  servicios: string
-  programa: string
-  meses: Month[]
-  status: 'completado' | 'en-progreso' | 'pendiente' | 'no-iniciado'
-  description?: string
+  pos: string;
+  equipo: string;
+  area: string;
+  servicios: string;
+  meses: Month[];
+  status: "completado" | "en-progreso" | "pendiente" | "no-iniciado";
+  categoria: "EQUIPOS FORJA" | "EQUIPOS MAQUINADO" | "EQUIPO AREAS ADMINISTRATIVAS";
+  description?: string;
   comments: Array<{
-    text: string
-    createdAt: Date
-  }>
+    text: string;
+    createdAt: Date;
+  }>;
 }
 
 interface TaskModalProps {
-  isOpen: boolean
-  onClose: () => void
-  initialData?: Tarea | null
-  onSuccess?: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  initialData?: Tarea | null;
+  onSuccess?: () => void;
 }
 
 const TaskModal: React.FC<TaskModalProps> = ({
   isOpen,
   onClose,
   initialData = null,
-  onSuccess
+  onSuccess,
 }) => {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<Tarea>({
-    pos: '',
-    equipo: '',
-    area: '',
-    servicios: '',
-    programa: '2024 - 2025',
+    pos: "",
+    equipo: "",
+    area: "",
+    servicios: "",
+    categoria: "EQUIPOS FORJA",
     meses: [],
-    status: 'no-iniciado',
-    description: '',
-    comments: []
-  })
+    status: "no-iniciado",
+    description: "",
+    comments: [],
+  });
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData)
+      setFormData(initialData);
     }
-  }, [initialData])
+  }, [initialData]);
 
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose()
+      if (event.key === "Escape") {
+        onClose();
       }
-    }
-    window.addEventListener('keydown', handleEsc)
-    return () => window.removeEventListener('keydown', handleEsc)
-  }, [onClose])
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [onClose]);
 
   const handleInputChange = (field: keyof Tarea, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-  }
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleMonthChange = (index: number, field: keyof Month, value: any) => {
-    setFormData(prev => {
-      const newMeses = [...prev.meses]
-      newMeses[index] = { ...newMeses[index], [field]: value }
-      return { ...prev, meses: newMeses }
-    })
-  }
+    setFormData((prev) => {
+      const newMeses = [...prev.meses];
+      newMeses[index] = { ...newMeses[index], [field]: value };
+      return { ...prev, meses: newMeses };
+    });
+  };
 
-  const handleWeekChange = (monthIndex: number, weekIndex: number, estado: boolean) => {
-    setFormData(prev => {
-      const newMeses = [...prev.meses]
-      newMeses[monthIndex].semanas[weekIndex].estado = estado
-      return { ...prev, meses: newMeses }
-    })
-  }
+  const handleWeekChange = (
+    monthIndex: number,
+    weekIndex: number,
+    estado: boolean,
+  ) => {
+    setFormData((prev) => {
+      const newMeses = [...prev.meses];
+      newMeses[monthIndex].semanas[weekIndex].estado = estado;
+      return { ...prev, meses: newMeses };
+    });
+  };
 
   const addMonth = () => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       meses: [
         ...prev.meses,
         {
-          mes: '',
-          semanas: Array.from({ length: 4 }, (_, i) => ({ 
-            numero: i + 1, 
-            estado: false 
-          }))
-        }
-      ]
-    }))
-  }
+          mes: "",
+          semanas: Array.from({ length: 4 }, (_, i) => ({
+            numero: i + 1,
+            estado: false,
+          })),
+        },
+      ],
+    }));
+  };
 
   const removeMonth = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      meses: prev.meses.filter((_, i) => i !== index)
-    }))
-  }
+      meses: prev.meses.filter((_, i) => i !== index),
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
+      const loadingToast = toast.loading(
+        initialData?._id ? "Actualizando tarea..." : "Creando tarea..."
+      );
+
       if (initialData?._id) {
-        await TareaService.updateTarea(initialData._id, formData)
-        alert('Tarea actualizada correctamente')
+        await TareaService.updateTarea(initialData._id, formData);
+        toast.success("Tarea actualizada correctamente", {
+          id: loadingToast,
+        });
       } else {
-        await TareaService.createTarea(formData)
-        alert('Tarea creada correctamente')
+        await TareaService.createTarea(formData);
+        toast.success("Tarea creada correctamente", {
+          id: loadingToast,
+        });
       }
 
-      onSuccess?.()
-      onClose()
+      onSuccess?.();
+      onClose();
     } catch (error) {
-      console.error('Error al guardar la tarea:', error)
-      alert('Error al guardar la tarea')
+      console.error("Error al guardar la tarea:", error);
+      toast.error("Error al guardar la tarea");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleAddComment = async (comment: string) => {
-    if (!initialData?._id) return
+    if (!initialData?._id || !comment.trim()) return;
+
+    const loadingToast = toast.loading("Añadiendo comentario...");
 
     try {
-      await TareaService.addComment(initialData._id, comment)
-      const updatedTask = { 
+      await TareaService.addComment(initialData._id, comment);
+      const updatedTask = {
         ...formData,
-        comments: [...formData.comments, {
-          text: comment,
-          createdAt: new Date()
-        }]
-      }
-      setFormData(updatedTask)
+        comments: [
+          ...formData.comments,
+          {
+            text: comment,
+            createdAt: new Date(),
+          },
+        ],
+      };
+      setFormData(updatedTask);
+      toast.success("Comentario añadido correctamente", {
+        id: loadingToast,
+      });
     } catch (error) {
-      console.error('Error al añadir comentario:', error)
-      alert('Error al añadir comentario')
+      console.error("Error al añadir comentario:", error);
+      toast.error("Error al añadir comentario", {
+        id: loadingToast,
+      });
     }
-  }
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
-  return (
+ return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Overlay */}
-      <div 
-        className="absolute inset-0 bg-black opacity-50"
-        onClick={onClose}
-      />
-      
-      {/* Modal */}
+      <div className="absolute inset-0 bg-black opacity-50" onClick={onClose} />
+
       <div className="relative bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">
-              {initialData ? 'Editar Tarea' : 'Nueva Tarea'}
+              {initialData ? "Editar Tarea" : "Nueva Tarea"}
             </h2>
             <button
               onClick={onClose}
@@ -178,7 +196,6 @@ const TaskModal: React.FC<TaskModalProps> = ({
               ✕
             </button>
           </div>
-
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -186,7 +203,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 <input
                   type="text"
                   value={formData.pos}
-                  onChange={(e) => handleInputChange('pos', e.target.value)}
+                  onChange={(e) => handleInputChange("pos", e.target.value)}
                   required
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -196,7 +213,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 <input
                   type="text"
                   value={formData.equipo}
-                  onChange={(e) => handleInputChange('equipo', e.target.value)}
+                  onChange={(e) => handleInputChange("equipo", e.target.value)}
                   required
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -206,27 +223,22 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 <input
                   type="text"
                   value={formData.area}
-                  onChange={(e) => handleInputChange('area', e.target.value)}
+                  onChange={(e) => handleInputChange("area", e.target.value)}
                   required
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Servicios</label>
+                <label className="block text-sm font-medium mb-1">
+                  Servicios
+                </label>
                 <input
                   type="text"
                   value={formData.servicios}
-                  onChange={(e) => handleInputChange('servicios', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("servicios", e.target.value)
+                  }
                   required
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1">Programa</label>
-                <input
-                  type="text"
-                  value={formData.programa}
-                  onChange={(e) => handleInputChange('programa', e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -234,7 +246,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 <label className="block text-sm font-medium mb-1">Estado</label>
                 <select
                   value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
+                  onChange={(e) => handleInputChange("status", e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="no-iniciado">No Iniciado</option>
@@ -243,11 +255,28 @@ const TaskModal: React.FC<TaskModalProps> = ({
                   <option value="completado">Completado</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Categoría</label>
+                <select
+                  value={formData.categoria}
+                  onChange={(e) => handleInputChange("categoria", e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="EQUIPOS FORJA">EQUIPOS FORJA</option>
+                  <option value="EQUIPOS MAQUINADO">EQUIPOS MAQUINADO</option>
+                  <option value="EQUIPO AREAS ADMINISTRATIVAS">
+                    EQUIPO AREAS ADMINISTRATIVAS
+                  </option>
+                </select>
+              </div>
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-medium">Meses y Semanas</label>
+                <label className="block text-sm font-medium">
+                  Meses y Semanas
+                </label>
                 <button
                   type="button"
                   onClick={addMonth}
@@ -261,11 +290,13 @@ const TaskModal: React.FC<TaskModalProps> = ({
                   <div key={monthIndex} className="p-4 border rounded-lg">
                     <div className="flex gap-4 mb-2">
                       <div className="flex-1">
-                        <input 
-                          type="month" 
+                        <input
+                          type="month"
                           value={mes.mes}
-                          onChange={(e) => handleMonthChange(monthIndex, 'mes', e.target.value)}
-                          className='w-full px-3 py-2 border rounded-lg'
+                          onChange={(e) =>
+                            handleMonthChange(monthIndex, "mes", e.target.value)
+                          }
+                          className="w-full px-3 py-2 border rounded-lg"
                         />
                       </div>
                       <button
@@ -278,12 +309,23 @@ const TaskModal: React.FC<TaskModalProps> = ({
                     </div>
                     <div className="grid grid-cols-4 gap-2">
                       {mes.semanas.map((semana, weekIndex) => (
-                        <div key={weekIndex} className="flex items-center gap-2">
-                          <label className="text-sm">Semana {semana.numero}</label>
+                        <div
+                          key={weekIndex}
+                          className="flex items-center gap-2"
+                        >
+                          <label className="text-sm">
+                            Semana {semana.numero}
+                          </label>
                           <input
                             type="checkbox"
                             checked={semana.estado}
-                            onChange={(e) => handleWeekChange(monthIndex, weekIndex, e.target.checked)}
+                            onChange={(e) =>
+                              handleWeekChange(
+                                monthIndex,
+                                weekIndex,
+                                e.target.checked,
+                              )
+                            }
                             className="h-4 w-4 text-blue-500"
                           />
                         </div>
@@ -295,10 +337,14 @@ const TaskModal: React.FC<TaskModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Descripción</label>
+              <label className="block text-sm font-medium mb-1">
+                Descripción
+              </label>
               <textarea
                 value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
                 rows={4}
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -311,13 +357,18 @@ const TaskModal: React.FC<TaskModalProps> = ({
                   {formData.comments.map((comment, index) => (
                     <div key={index} className="bg-gray-50 p-3 rounded-lg">
                       <div className="text-sm text-gray-500">
-                        <span>{format(new Date(comment.createdAt), 'dd/MM/yyyy HH:mm')}</span>
+                        <span>
+                          {format(
+                            new Date(comment.createdAt),
+                            "dd/MM/yyyy HH:mm",
+                          )}
+                        </span>
                       </div>
                       <p className="mt-1">{comment.text}</p>
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -325,19 +376,21 @@ const TaskModal: React.FC<TaskModalProps> = ({
                     id="newComment"
                     className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        const input = e.target as HTMLInputElement
-                        handleAddComment(input.value)
-                        input.value = ''
+                      if (e.key === "Enter") {
+                        const input = e.target as HTMLInputElement;
+                        handleAddComment(input.value);
+                        input.value = "";
                       }
                     }}
                   />
                   <button
                     type="button"
                     onClick={() => {
-                      const input = document.getElementById('newComment') as HTMLInputElement
-                      handleAddComment(input.value)
-                      input.value = ''
+                      const input = document.getElementById(
+                        "newComment",
+                      ) as HTMLInputElement;
+                      handleAddComment(input.value);
+                      input.value = "";
                     }}
                     className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
@@ -355,18 +408,23 @@ const TaskModal: React.FC<TaskModalProps> = ({
               >
                 Cancelar
               </button>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={isLoading}
                 className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
               >
-                {isLoading ? 'Guardando...' : initialData?._id ? 'Actualizar' : 'Crear'}
+                {isLoading
+                  ? "Guardando..."
+                  : initialData?._id
+                    ? "Actualizar"
+                    : "Crear"}
               </button>
             </div>
-          </form>        </div>
+          </form>{" "}
+        </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default TaskModal
+export default TaskModal;
