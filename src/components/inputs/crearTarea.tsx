@@ -70,11 +70,11 @@ const TaskModal: React.FC<TaskModalProps> = ({
     return () => window.removeEventListener("keydown", handleEsc);
   }, [onClose]);
 
-  const handleInputChange = (field: keyof Tarea, value: string | number | boolean) => {
+  const handleInputChange = (field: keyof Tarea, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleMonthChange = (index: number, field: keyof Month, value: string | number | boolean) => {
+  const handleMonthChange = (index: number, field: keyof Month, value: any) => {
     setFormData((prev) => {
       const newMeses = [...prev.meses];
       newMeses[index] = { ...newMeses[index], [field]: value };
