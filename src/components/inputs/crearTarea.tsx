@@ -3,6 +3,38 @@ import { TareaService, Tarea } from "@/services/tareaService";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
+// Interfaces para el modelo de datos
+// interface Semana {
+//   numero: number;
+//   estado: boolean;
+//   _id?: string; // Opcional para creación, requerido para actualización
+// }
+//
+// interface Mes {
+//   mes: string;
+//   semanas: Semana[];
+//   _id?: string; // Opcional para creación, requerido para actualización
+// }
+//
+// interface Comment {
+//   text: string;
+//   createdAt?: Date;
+//   _id?: string;
+// }
+//
+// interface Tarea {
+//   _id?: string;
+//   pos: string;
+//   equipo: string;
+//   area: string;
+//   servicios: string;
+//   categoria: "EQUIPOS FORJA" | "EQUIPOS MAQUINADO" | "EQUIPO AREAS ADMINISTRATIVAS";
+//   meses: Mes[];
+//   status: "completado" | "en-progreso" | "pendiente" | "no-iniciado";
+//   description?: string;
+//   comments: Comment[];
+// }
+
 interface Week {
   numero: number;
   estado: boolean;
@@ -11,21 +43,6 @@ interface Week {
 interface Month {
   mes: string;
   semanas: Week[];
-}
-
-interface Tarea {
-  pos: string;
-  equipo: string;
-  area: string;
-  servicios: string;
-  meses: Month[];
-  status: "completado" | "en-progreso" | "pendiente" | "no-iniciado";
-  categoria: "EQUIPOS FORJA" | "EQUIPOS MAQUINADO" | "EQUIPO AREAS ADMINISTRATIVAS";
-  description?: string;
-  comments: Array<{
-    text: string;
-    createdAt: Date;
-  }>;
 }
 
 interface TaskModalProps {
@@ -42,7 +59,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
   onSuccess,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState<Tarea>({
+  const [formData, setFormData] = useState<Omit<Tarea, "_id">>({
     pos: "",
     equipo: "",
     area: "",
@@ -56,7 +73,12 @@ const TaskModal: React.FC<TaskModalProps> = ({
 
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData({
+        ...initialData,
+        createdAt: initialData.createdAt,
+        updatedAt: initialData.updatedAt,
+        __v: initialData.__v,
+      });
     }
   }, [initialData]);
 
@@ -101,9 +123,11 @@ const TaskModal: React.FC<TaskModalProps> = ({
         ...prev.meses,
         {
           mes: "",
+          _id: "", // This will be set by the backend
           semanas: Array.from({ length: 4 }, (_, i) => ({
             numero: i + 1,
             estado: false,
+            _id: "", // This will be set by the backend
           })),
         },
       ],
@@ -123,15 +147,31 @@ const TaskModal: React.FC<TaskModalProps> = ({
 
     try {
       const loadingToast = toast.loading(
-        initialData?._id ? "Actualizando tarea..." : "Creando tarea..."
+        initialData?._id ? "Actualizando tarea..." : "Creando tarea...",
       );
 
       if (initialData?._id) {
-        await TareaService.updateTarea(initialData._id, formData);
+        // Ensure all required IDs are preserved when updating
+        const updateData: Partial<Tarea> = {
+          ...formData,
+          meses: formData.meses.map((mes, monthIndex) => ({
+            ...mes,
+            _id: initialData.meses[monthIndex]?._id || mes._id,
+            semanas: mes.semanas.map((semana, weekIndex) => ({
+              ...semana,
+              _id:
+                initialData.meses[monthIndex]?.semanas[weekIndex]?._id ||
+                semana._id,
+            })),
+          })),
+        };
+
+        await TareaService.updateTarea(initialData._id, updateData);
         toast.success("Tarea actualizada correctamente", {
           id: loadingToast,
         });
       } else {
+        // For creation, backend will assign IDs
         await TareaService.createTarea(formData);
         toast.success("Tarea creada correctamente", {
           id: loadingToast,
@@ -154,14 +194,15 @@ const TaskModal: React.FC<TaskModalProps> = ({
     const loadingToast = toast.loading("Añadiendo comentario...");
 
     try {
-      await TareaService.addComment(initialData._id, comment);
+      const response = await TareaService.addComment(initialData._id, comment);
       const updatedTask = {
         ...formData,
         comments: [
           ...formData.comments,
           {
             text: comment,
-            createdAt: new Date(),
+            createdAt: new Date().toISOString(),
+            _id: response._id, // Assuming the backend returns the new comment with an _id
           },
         ],
       };
@@ -179,7 +220,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
 
   if (!isOpen) return null;
 
- return (
+  return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black opacity-50" onClick={onClose} />
 
@@ -256,10 +297,14 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Categoría</label>
+                <label className="block text-sm font-medium mb-1">
+                  Categoría
+                </label>
                 <select
                   value={formData.categoria}
-                  onChange={(e) => handleInputChange("categoria", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("categoria", e.target.value)
+                  }
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
@@ -359,7 +404,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                       <div className="text-sm text-gray-500">
                         <span>
                           {format(
-                            new Date(comment.createdAt),
+                            new Date(comment.createdAt || new Date()),
                             "dd/MM/yyyy HH:mm",
                           )}
                         </span>

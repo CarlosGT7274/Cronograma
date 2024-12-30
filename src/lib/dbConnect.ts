@@ -1,34 +1,57 @@
-import mongoose from 'mongoose'
+// lib/dbConnect.tsx
 
-const MONGODB_URI = process.env.MONGODB_URI
+import type _mongoose from 'mongoose';
+import { connect } from 'mongoose';
 
-if (!MONGODB_URI) {
-  throw new Error('Define MONGODB_URI en tus variables de entorno')
+declare global {
+  // eslint-disable-next-line
+  var mongoose: {
+    promise: ReturnType<typeof connect> | null;
+    conn: typeof _mongoose | null;
+  };
 }
 
-let cached = global.mongoose
+const { MONGODB_URI } = process.env;
+
+if (!MONGODB_URI) {
+  throw new Error('Please define the MONGODB_URI environment variable inside .env.local');
+}
+
+/**
+ * Global is used here to maintain a cached connection across hot reloads
+ * in development. This prevents connections from growing exponentially
+ * during API Route usage.
+ */
+let cached = global.mongoose;
 
 if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null }
+  global.mongoose = { conn: null, promise: null };
+  cached = { conn: null, promise: null };
 }
 
 async function dbConnect() {
   if (cached.conn) {
-    console.log(`🔗 Reutilizando conexión existente. Estado: ${mongoose.connection.readyState}`);
     return cached.conn;
   }
 
-  try {
-    const conn = await mongoose.connect(MONGODB_URI);
-    console.log(`✅ Nueva conexión establecida. 
-      Host: ${conn.connection.host}
-      Base de datos: ${conn.connection.db.databaseName}
-      Estado: ${conn.connection.readyState}`);
-    return conn;
-  } catch (error) {
-    console.error(`❌ Error de conexión: ${error}`);
-    throw error;
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+    };
+
+    cached.promise = connect(MONGODB_URI!, opts).then((mongoose) => {
+      return mongoose;
+    });
   }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
 }
 
-export default dbConnect
+export default dbConnect;

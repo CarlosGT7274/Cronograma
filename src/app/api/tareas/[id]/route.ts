@@ -3,12 +3,13 @@ import Tarea from '@/lib/models/Tarea';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
-  request: NextRequest, 
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
     await dbConnect();
-    const tarea = await Tarea.findById(params.id);
+    const { id } = await params;
+    const tarea = await Tarea.findById(id);
     
     if (!tarea) {
       return NextResponse.json({ message: 'Tarea no encontrada' }, { status: 404 });
@@ -25,15 +26,16 @@ export async function GET(
 }
 
 export async function PUT(
-  request: NextRequest, 
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
     await dbConnect();
+    const { id } = await params;
     const body = await request.json();
     
     const tareaActualizada = await Tarea.findByIdAndUpdate(
-      params.id, 
+      id, 
       body, 
       { new: true, runValidators: true }
     );
@@ -53,12 +55,13 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: NextRequest, 
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
     await dbConnect();
-    const tareaEliminada = await Tarea.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const tareaEliminada = await Tarea.findByIdAndDelete(id);
     
     if (!tareaEliminada) {
       return NextResponse.json({ message: 'Tarea no encontrada' }, { status: 404 });
@@ -73,3 +76,5 @@ export async function DELETE(
     }, { status: 500 });
   }
 }
+
+

@@ -22,10 +22,7 @@ import {
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { Tarea, TareaService } from "@/services/tareaService";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
 import TaskModal from "@/components/inputs/crearTarea";
-import { intlFormatDistanceWithOptions } from "date-fns/fp";
 
 const MONTHS_TO_SHOW = 12;
 const CELL_WIDTH = 40;
@@ -65,19 +62,19 @@ export const CalendarioTab: React.FC = () => {
   });
 
   // Función para obtener el último día de un mes
-  function getLastDayOfMonth(year, month) {
+  function getLastDayOfMonth(year: number, month: number): number {
     return new Date(year, month + 1, 0).getDate();
   }
 
   // Función para calcular las semanas de un mes
-  function getWeeksInMonth(year, month) {
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month, getLastDayOfMonth(year, month));
-    const weeks = [];
+  function getWeeksInMonth(year: number, month: number): number[] {
+    const firstDay: Date = new Date(year, month, 1);
+    const lastDay: Date = new Date(year, month, getLastDayOfMonth(year, month));
+    const weeks: number[] = [];
 
     // Ajustar al lunes anterior si el mes no empieza en lunes
-    let currentDate = new Date(firstDay);
-    const firstDayOfWeek = firstDay.getDay();
+    let currentDate: Date = new Date(firstDay);
+    const firstDayOfWeek: number = firstDay.getDay();
     if (firstDayOfWeek !== 1) {
       // Si no es lunes
       currentDate.setDate(
@@ -85,14 +82,14 @@ export const CalendarioTab: React.FC = () => {
       );
     }
 
-    let weekCounter = 1;
+    let weekCounter: number = 1;
     if (month === 0) {
       // Enero siempre empieza en semana 1
       weekCounter = 1;
     } else {
       // Calcular el número de semana basado en el mes
-      const daysFromYearStart = Math.floor(
-        (new Date(year, month, 1) - new Date(year, 0, 1)) /
+      const daysFromYearStart: number = Math.floor(
+        (new Date(year, month, 1).getTime() - new Date(year, 0, 1).getTime()) /
           (24 * 60 * 60 * 1000),
       );
       weekCounter = Math.floor(daysFromYearStart / 7) + 1;
@@ -100,7 +97,7 @@ export const CalendarioTab: React.FC = () => {
 
     // Iterar por semanas hasta el fin del mes
     while (currentDate <= lastDay) {
-      const endOfWeek = new Date(currentDate);
+      const endOfWeek: Date = new Date(currentDate);
       endOfWeek.setDate(endOfWeek.getDate() + 6);
 
       // Si la semana termina en este mes, agregarla
@@ -117,44 +114,28 @@ export const CalendarioTab: React.FC = () => {
 
     return weeks;
   }
-  function generateWeekNumbers(year) {
-    const months = eachMonthOfInterval({
-      start: startDate,
-      end: addMonths(startDate, MONTHS_TO_SHOW - 1),
-    });
 
-    const result = {};
+  type WeekNumbersResult = {
+    [key: string]: number[];
+  };
 
-    // Generar semanas para cada mes
-    months.forEach((monthName, index) => {
-      result[monthName] = getWeeksInMonth(year, index);
-    });
-
+  function generateWeekNumbers(year: number): WeekNumbersResult {
+    // const months = eachMonthOfInterval({
+    //   start: startDate,
+    //   end: addMonths(startDate, MONTHS_TO_SHOW - 1),
+    // });
+    //
+    // const result = {};
+    //
+    // // Generar semanas para cada mes
+    // months.forEach((monthName, index) => {
+    //   result[monthName] = getWeeksInMonth(year, index);
+    // });
+    //
     // Reorganizar para que octubre sea el primer mes
-    const finalResult = {};
-    const octubreToDeciembre = ["OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
-    const eneroToSeptiembre = months.slice(0, 9);
+    const finalResult: WeekNumbersResult = {};
 
-    const mesesSiguientes = eachMonthOfInterval({
-      start: addMonths(
-        new Date(startDate.getFullYear(), startDate.getMonth(), 1),
-        1,
-      ),
-      end: addMonths(
-        new Date(startDate.getFullYear(), startDate.getMonth(), 1),
-        2,
-      ),
-    });
-
-    const mesesAnteriores = eachMonthOfInterval({
-      start: subMonths(
-        new Date(startDate.getFullYear(), startDate.getMonth(), 1),
-        9,
-      ),
-      end: new Date(startDate.getFullYear(), startDate.getMonth(), 1),
-    });
-
-    const adjustedStartDate = new Date(
+    const adjustedStartDate: Date = new Date(
       startDate.getFullYear(),
       startDate.getMonth(),
       1,
@@ -168,26 +149,8 @@ export const CalendarioTab: React.FC = () => {
 
     const allMonths = meses;
 
-    // console.log(mesesinicio)
-    // console.log(restoMeses)
-    // console.log(allMonths)
-
-    // console.log(months)
-
-    // months.forEach((month) => {
-    //   console.log(finalResult)
-    //   finalResult[month] = result[month];
-    // });
-
-    // allMonths.forEach((month) => {
-    //   finalResult[month] = getWeeksInMonth(
-    //     month.getFullYear(),
-    //     month.getMonth(),
-    //   );
-    // });
-
     allMonths.forEach((month) => {
-      const key = month.toISOString().slice(0, 10); // Solo año y mes
+      const key: string = month.toISOString().slice(0, 10); // Solo año y mes
       finalResult[key] = getWeeksInMonth(month.getFullYear(), month.getMonth());
     });
 
@@ -203,7 +166,7 @@ export const CalendarioTab: React.FC = () => {
   // });
   //
   const getTaskPosition = (tarea: Tarea) => {
-    let cells = [];
+    let cells: Array<{ month: string; week: number; weekIndex: number }> = [];
 
     tarea.meses.forEach((mes) => {
       mes.semanas.forEach((semana) => {
@@ -242,7 +205,56 @@ export const CalendarioTab: React.FC = () => {
   //   })
   // })
 
-  const allWeeks = [];
+type Comment = {
+  text: string;
+  createdAt: string;
+  _id: string;
+};
+
+type Semana = {
+  numero: number;
+  estado: boolean;
+  _id: string;
+};
+
+type Mes = {
+  mes: string; // "YYYY-MM"
+  semanas: Semana[];
+  _id: string;
+};
+
+// type Tarea = {
+//   _id: string;
+//   pos: string;
+//   equipo: string;
+//   area: string;
+//   servicios: string;
+//   categoria: string;
+//   meses: {
+//     mes: string;
+//     semanas: {
+//       numero: number;
+//       estado: boolean;
+//       _id: string;
+//     }[];
+//     _id: string;
+//   }[];
+//   status: string;
+//   description: string;
+//   comments: {
+//     text: string;
+//     createdAt: string;
+//     _id: string;
+//   }[];
+//   createdAt: string;
+//   updatedAt: string;
+//   __v: number;
+// };
+
+type TasksByCategory = {
+  [categoria: string]: Tarea[];
+};
+  const allWeeks: Date[] = [];
   eachWeekOfInterval({
     start: new Date(startDate).setDate(1),
     end: addMonths(new Date(startDate).setDate(1), MONTHS_TO_SHOW),
@@ -250,15 +262,15 @@ export const CalendarioTab: React.FC = () => {
     allWeeks.push(weekStart); // Simplemente agrega los valores al arreglo
   });
 
-
-    const tasksByCategory = useMemo(() => {
-    const grouped = {};
-    tareas.forEach(tarea => {
+  const tasksByCategory = useMemo<TasksByCategory>(() => {
+    const grouped: TasksByCategory = {};
+    tareas.forEach((tarea) => {
       if (!grouped[tarea.categoria]) {
         grouped[tarea.categoria] = [];
       }
       grouped[tarea.categoria].push(tarea);
     });
+    console.log(grouped)
     return grouped;
   }, [tareas]);
 
@@ -285,7 +297,6 @@ export const CalendarioTab: React.FC = () => {
 
           <TaskModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
         </div>
-        
       </div>
       <div className="overflow-x-auto">
         <div
@@ -315,10 +326,10 @@ export const CalendarioTab: React.FC = () => {
                 ))}
               </div>
               {Object.entries(tasksByCategory).map(([categoria, tareas]) => (
-              <div key={categoria} >
-                <div className="bg-gray-100 py-2 px-4 font-semibold border-b border-gray-300">
+                <div key={categoria}>
+                  <div className="bg-gray-100 py-2 px-4 font-semibold border-b border-gray-300">
                     {categoria}
-                </div>
+                  </div>
                   {tareas.map((tarea, index) => (
                     <div
                       key={index}
@@ -378,7 +389,7 @@ export const CalendarioTab: React.FC = () => {
                       </div>
                     </div>
                   ))}
-              </div>
+                </div>
               ))}
             </div>
             <div>
@@ -419,64 +430,67 @@ export const CalendarioTab: React.FC = () => {
                   </div>
                 ))}
               </div>
-                 {Object.entries(tasksByCategory).map(([categoria, categoriaTareas]) => (
-                <React.Fragment key={categoria}>
-                  {/* Category Header Space */}
-                  <div 
-                    className="bg-gray-100 border-b border-gray-300"
-                    style={{ height: "40px" }}
-                  />
-                  
-                  {/* Category Tasks */}
-                  {categoriaTareas.map((tarea, tareaIndex) => {
-                    const cells = getTaskPosition(tarea);
-                    return (
-                      <div
-                        key={tareaIndex}
-                        style={{
-                          height: `${ROW_HEIGHT}px`,
-                          position: "relative",
-                          borderBottom: "1px solid #e2e8f0",
-                        }}
-                      >
-                        {/* Background cells */}
-                        {allWeeks.map((_, weekIndex) => (
-                          <div
-                            key={weekIndex}
-                            style={{
-                              position: "absolute",
-                              left: `${weekIndex * CELL_WIDTH}px`,
-                              width: `${CELL_WIDTH}px`,
-                              height: "100%",
-                              borderRight: "1px solid #e2e8f0",
-                              backgroundColor: weekIndex % 2 === 0 ? "#f9fafb" : "white",
-                            }}
-                          />
-                        ))}
+              {Object.entries(tasksByCategory).map(
+                ([categoria, categoriaTareas]) => (
+                  <React.Fragment key={categoria}>
+                    {/* Category Header Space */}
+                    <div
+                      className="bg-gray-100 border-b border-gray-300"
+                      style={{ height: "40px" }}
+                    />
 
-                        {/* Task cells */}
-                        {cells.map((cell, cellIndex) => (
-                          <div
-                            key={cellIndex}
-                            style={{
-                              position: "absolute",
-                              left: `${cell.weekIndex * CELL_WIDTH}px`,
-                              width: `${CELL_WIDTH}px`,
-                              height: "80%",
-                              top: "10%",
-                              backgroundColor: "#3b82f6",
-                              borderRadius: "4px",
-                              zIndex: 10,
-                            }}
-                            title={`${tarea.servicios}: ${cell.month} - Semana ${cell.week}`}
-                            className="hover:opacity-80 transition-opacity duration-200"
-                          />
-                        ))}
-                      </div>
-                    );
-                  })}
-                </React.Fragment>
-              ))}
+                    {/* Category Tasks */}
+                    {categoriaTareas.map((tarea, tareaIndex) => {
+                      const cells = getTaskPosition(tarea);
+                      return (
+                        <div
+                          key={tareaIndex}
+                          style={{
+                            height: `${ROW_HEIGHT}px`,
+                            position: "relative",
+                            borderBottom: "1px solid #e2e8f0",
+                          }}
+                        >
+                          {/* Background cells */}
+                          {allWeeks.map((_, weekIndex) => (
+                            <div
+                              key={weekIndex}
+                              style={{
+                                position: "absolute",
+                                left: `${weekIndex * CELL_WIDTH}px`,
+                                width: `${CELL_WIDTH}px`,
+                                height: "100%",
+                                borderRight: "1px solid #e2e8f0",
+                                backgroundColor:
+                                  weekIndex % 2 === 0 ? "#f9fafb" : "white",
+                              }}
+                            />
+                          ))}
+
+                          {/* Task cells */}
+                          {cells.map((cell, cellIndex) => (
+                            <div
+                              key={cellIndex}
+                              style={{
+                                position: "absolute",
+                                left: `${cell.weekIndex * CELL_WIDTH}px`,
+                                width: `${CELL_WIDTH}px`,
+                                height: "80%",
+                                top: "10%",
+                                backgroundColor: "#3b82f6",
+                                borderRadius: "4px",
+                                zIndex: 10,
+                              }}
+                              title={`${tarea.servicios}: ${cell.month} - Semana ${cell.week}`}
+                              className="hover:opacity-80 transition-opacity duration-200"
+                            />
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </React.Fragment>
+                ),
+              )}
             </div>
           </div>
         </div>

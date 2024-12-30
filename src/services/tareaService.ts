@@ -8,20 +8,104 @@ export interface Comentario {
   createdAt?: Date;
 }
 
+// export interface Tarea {
+//   _id?: string;
+//   id?: string;
+//   name: string;
+//   month: string;
+//   startDate: string;
+//   endDate: string;
+//   status: 'completado' | 'en-progreso' | 'pendiente' | 'no-iniciado';
+//   categoria:
+//     | "EQUIPOS FORJA"
+//     | "EQUIPOS MAQUINADO"
+//     | "EQUIPO AREAS ADMINISTRATIVAS";
+//   description: string;
+//   comments: Comentario[];
+// }
+
+interface Week {
+  numero: number;
+  estado: boolean;
+}
+
+interface Month {
+  mes: string;
+  semanas: Week[];
+}
+
+// export interface Tarea {
+//   _id?: string,
+//   id?: string,
+//   pos: string;
+//   equipo: string;
+//   area: string;
+//   servicios: string;
+//   meses: Month[];
+//   status: "completado" | "en-progreso" | "pendiente" | "no-iniciado";
+//   categoria: "EQUIPOS FORJA" | "EQUIPOS MAQUINADO" | "EQUIPO AREAS ADMINISTRATIVAS";
+//   description?: string;
+//   comments: Array<{
+//     text: string;
+//     createdAt: Date;
+//   }>;
+// }
+//
+// export interface Tarea {
+//   _id?: string;
+//   pos: string;
+//   equipo: string;
+//   area: string;
+//   servicios: string;
+//   categoria: string;
+//   meses: {
+//     mes: string;      // "YYYY-MM"
+//     semanas: {
+//       numero: number;
+//       estado: boolean;
+//       _id?: string;
+//     }[];
+//     _id?: string;
+//   }[];
+//   status: string;
+//   description: string;
+//   comments: {
+//     text: string;
+//     createdAt?: string | Date;
+//     _id?: string;
+//   }[];
+//   createdAt?: string;
+//   updatedAt?: string;
+//   __v?: number;
+// }
+
+
 export interface Tarea {
-  _id?: string;
-  id?: string;
-  name: string;
-  month: string;
-  startDate: string;
-  endDate: string;
-  status: 'completado' | 'en-progreso' | 'pendiente' | 'no-iniciado';
-  categoria:
-    | "EQUIPOS FORJA"
-    | "EQUIPOS MAQUINADO"
-    | "EQUIPO AREAS ADMINISTRATIVAS";
+  _id: string;  // Remove the optional '?' to make it required
+  pos: string;
+  equipo: string;
+  area: string;
+  servicios: string;
+  categoria: string;
+  meses: {
+    mes: string;      // "YYYY-MM"
+    semanas: {
+      numero: number;
+      estado: boolean;
+      _id: string;    // Make this required too
+    }[];
+    _id: string;      // Make this required too
+  }[];
+  status: string;
   description: string;
-  comments: Comentario[];
+  comments: {
+    text: string;
+    createdAt?: string | Date;
+    _id: string;      // Make this required too
+  }[];
+  createdAt?: string;
+  updatedAt?: string;
+  __v?: number;
 }
 
 export const TareaService = {
@@ -32,7 +116,7 @@ export const TareaService = {
   },
 
   // Crear nueva tarea
-  createTarea: async (tarea: Tarea): Promise<Tarea> => {
+  createTarea: async (tarea: Omit<Tarea, '_id' | 'createdAt' | 'updatedAt' | '__v'>): Promise<Tarea> => {
     const response = await axios.post(API_URL, tarea);
     return response.data;
   },
