@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { TareaService, Tarea } from "@/services/tareaService";
+import { IoTrashOutline } from "react-icons/io5";
 
 // Helper function to get status color
 const getStatusColor = (status: Tarea["status"]) => {
@@ -114,37 +115,40 @@ export const MonthTab = ({ month }: { month: string }) => {
           );
         });
       })
-            .sort((a, b) => {
+      .sort((a, b) => {
         // Validar que las propiedades existen y son strings
         if (sortBy === "status") {
           if (!a.status || !b.status) return 0;
           return a.status.localeCompare(b.status);
         }
-        
+
         const aValue = a[sortBy];
         const bValue = b[sortBy];
-        
+
         // Si alguno de los valores no existe o no es string
-        if (typeof aValue !== 'string' || typeof bValue !== 'string') {
-          if (!aValue) return 1;  // Mover valores undefined/null al final
+        if (typeof aValue !== "string" || typeof bValue !== "string") {
+          if (!aValue) return 1; // Mover valores undefined/null al final
           if (!bValue) return -1; // Mover valores undefined/null al final
           return 0;
         }
-        
+
         return aValue.localeCompare(bValue);
       });
   }, [tasks, month, filterStatus, sortBy, searchTerm]);
 
   console.log(monthTasks);
 
-    const tasksByCategory = useMemo(() => {
-    return monthTasks.reduce((acc, task) => {
-      if (!acc[task.categoria]) {
-        acc[task.categoria] = [];
-      }
-      acc[task.categoria].push(task);
-      return acc;
-    }, {} as Record<string, Tarea[]>);
+  const tasksByCategory = useMemo(() => {
+    return monthTasks.reduce(
+      (acc, task) => {
+        if (!acc[task.categoria]) {
+          acc[task.categoria] = [];
+        }
+        acc[task.categoria].push(task);
+        return acc;
+      },
+      {} as Record<string, Tarea[]>,
+    );
   }, [monthTasks]);
 
   useEffect(() => {
@@ -185,6 +189,18 @@ export const MonthTab = ({ month }: { month: string }) => {
     }
   };
 
+  const deleteComment = async (taskId: string, commentId: string) => {
+    try {
+      const deletedTask = await TareaService.deleteComment(taskId, commentId);
+
+      setTasks((prevTasks) =>
+        prevTasks.map((task) => (task._id === taskId ? deletedTask : task)),
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleCommentChange = (taskId: string, text: string) => {
     setNewComments((prev) => ({
       ...prev,
@@ -204,9 +220,6 @@ export const MonthTab = ({ month }: { month: string }) => {
     return <div className="p-6 text-center">No hay tareas para {month}.</div>;
   }
 
-
-
-
   return (
     <div className="p-4">
       <h2 className="text-2xl font-bold mb-6">
@@ -222,13 +235,13 @@ export const MonthTab = ({ month }: { month: string }) => {
             >
               <div className="flex justify-between items-center mb-2">
                 <div>
-                  <h4 className="text-lg font-semibold">
-                    {task.area} - {task.equipo}
-                  </h4>
-                  <p className="text-sm text-gray-600">{task.servicios}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     Año: {task.meses[0].mes.split("-")[0]}
                   </p>
+                  <h4 className="text-lg font-semibold">
+                    {task.pos} - {task.equipo} - {task.area}
+                  </h4>
+                  <p className="text-md">Servicios: {task.servicios}</p>
                 </div>
                 <span
                   className={`px-2 py-1 rounded text-white text-xs ${getStatusColor(task.status)}`}
@@ -236,12 +249,16 @@ export const MonthTab = ({ month }: { month: string }) => {
                   {task.status}
                 </span>
               </div>
-              <p className="text-sm text-gray-700 mb-2">{task.description}</p>
+              <p className="text-sm text-gray-700 mb-2">Description: {task.description}</p>
               <div className="mt-4">
                 <h5 className="font-medium mb-2">Comentarios</h5>
                 {task.comments && task.comments.length > 0 ? (
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {task.comments.map((comment, index) => (
+                      <div key={index} className=" flex space-x-2" >
+                        <button onClick={ () => deleteComment(task._id, comment._id) } >
+                          <IoTrashOutline />
+                        </button>
                       <div
                         key={index}
                         className="bg-gray-100 p-2 rounded text-sm"
@@ -257,6 +274,7 @@ export const MonthTab = ({ month }: { month: string }) => {
                           )
                         </span>
                         <p className="mt-1">{comment.text}</p>
+                      </div>
                       </div>
                     ))}
                   </div>

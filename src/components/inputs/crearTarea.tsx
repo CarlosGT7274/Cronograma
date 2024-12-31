@@ -3,38 +3,6 @@ import { TareaService, Tarea } from "@/services/tareaService";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 
-// Interfaces para el modelo de datos
-// interface Semana {
-//   numero: number;
-//   estado: boolean;
-//   _id?: string; // Opcional para creación, requerido para actualización
-// }
-//
-// interface Mes {
-//   mes: string;
-//   semanas: Semana[];
-//   _id?: string; // Opcional para creación, requerido para actualización
-// }
-//
-// interface Comment {
-//   text: string;
-//   createdAt?: Date;
-//   _id?: string;
-// }
-//
-// interface Tarea {
-//   _id?: string;
-//   pos: string;
-//   equipo: string;
-//   area: string;
-//   servicios: string;
-//   categoria: "EQUIPOS FORJA" | "EQUIPOS MAQUINADO" | "EQUIPO AREAS ADMINISTRATIVAS";
-//   meses: Mes[];
-//   status: "completado" | "en-progreso" | "pendiente" | "no-iniciado";
-//   description?: string;
-//   comments: Comment[];
-// }
-
 interface Week {
   numero: number;
   estado: boolean;
@@ -63,7 +31,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
     pos: "",
     equipo: "",
     area: "",
-    servicios: "",
+    servicios: "0",
     categoria: "EQUIPOS FORJA",
     meses: [],
     status: "no-iniciado",
@@ -92,7 +60,22 @@ const TaskModal: React.FC<TaskModalProps> = ({
     return () => window.removeEventListener("keydown", handleEsc);
   }, [onClose]);
 
+    useEffect(() => {
+    const completedServices = formData.meses.reduce((total, mes) => {
+      console.log(total)
+      const completedWeeks = mes.semanas.filter(semana => semana.estado).length;
+      console.log(completedWeeks)
+      return total + completedWeeks;
+    }, 0);
+    
+    setFormData(prev => ({
+      ...prev,
+      servicios: completedServices.toString()
+    }));
+  }, [formData.meses]);
+
   const handleInputChange = (field: keyof Tarea, value: any) => {
+    if (field === "servicios") return;
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -123,11 +106,9 @@ const TaskModal: React.FC<TaskModalProps> = ({
         ...prev.meses,
         {
           mes: "",
-          _id: "", // This will be set by the backend
           semanas: Array.from({ length: 4 }, (_, i) => ({
             numero: i + 1,
             estado: false,
-            _id: "", // This will be set by the backend
           })),
         },
       ],
@@ -154,14 +135,10 @@ const TaskModal: React.FC<TaskModalProps> = ({
         // Ensure all required IDs are preserved when updating
         const updateData: Partial<Tarea> = {
           ...formData,
-          meses: formData.meses.map((mes, monthIndex) => ({
+          meses: formData.meses.map((mes) => ({
             ...mes,
-            _id: initialData.meses[monthIndex]?._id || mes._id,
-            semanas: mes.semanas.map((semana, weekIndex) => ({
+            semanas: mes.semanas.map((semana) => ({
               ...semana,
-              _id:
-                initialData.meses[monthIndex]?.semanas[weekIndex]?._id ||
-                semana._id,
             })),
           })),
         };
@@ -202,7 +179,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
           {
             text: comment,
             createdAt: new Date().toISOString(),
-            _id: response._id, // Assuming the backend returns the new comment with an _id
+            _id: response._id
           },
         ],
       };
@@ -276,9 +253,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                 <input
                   type="text"
                   value={formData.servicios}
-                  onChange={(e) =>
-                    handleInputChange("servicios", e.target.value)
-                  }
+                  readOnly
                   required
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />

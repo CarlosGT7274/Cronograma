@@ -6,18 +6,7 @@ import {
   format,
   eachMonthOfInterval,
   eachWeekOfInterval,
-  startOfMonth,
-  endOfMonth,
-  getWeek,
-  eachWeekendOfInterval,
   getYear,
-  getMonth,
-  startOfWeek,
-  endOfWeek,
-  areIntervalsOverlapping,
-  addWeeks,
-  isSameMonth,
-  subMonths,
   parseISO,
 } from "date-fns";
 import { es } from "date-fns/locale";
@@ -284,7 +273,7 @@ type TasksByCategory = {
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-4 ">
         <h2 className="text-2xl font-bold">Cronograma </h2>
         <input type="date" onChange={handleDateChange} />
         <div>

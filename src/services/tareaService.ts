@@ -92,16 +92,14 @@ export interface Tarea {
     semanas: {
       numero: number;
       estado: boolean;
-      _id: string;    // Make this required too
     }[];
-    _id: string;      // Make this required too
   }[];
   status: string;
   description: string;
   comments: {
     text: string;
     createdAt?: string | Date;
-    _id: string;      // Make this required too
+    _id: string;
   }[];
   createdAt?: string;
   updatedAt?: string;
@@ -130,15 +128,24 @@ export const TareaService = {
   // Añadir comentario
   addComment: async (id: string, comment: string): Promise<Tarea> => {
     const response = await axios.put(`${API_URL}/${id}`, {
-      $push: { 
-        comments: { 
-          text: comment, 
+      $push: {
+        comments: {
+          text: comment,
           author: 'Usuario',
           createdAt: new Date()
-        } 
+        }
       }
     });
     return response.data;
+  },
+
+  deleteComment: async (id: string, commentId: string): Promise<Tarea> => {
+    const response = await axios.put(`${API_URL}/${id}`, {
+      $pull: {
+        comments: { _id: commentId }
+      }
+    })
+    return response.data
   },
 
   // Eliminar tarea
