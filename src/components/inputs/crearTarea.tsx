@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { TareaService, Tarea } from "@/services/tareaService";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
+import { getWeeksInMonth } from "@/utils/dateutils";
 
 interface Week {
   numero: number;
@@ -60,19 +61,46 @@ const TaskModal: React.FC<TaskModalProps> = ({
     return () => window.removeEventListener("keydown", handleEsc);
   }, [onClose]);
 
-    useEffect(() => {
+  useEffect(() => {
     const completedServices = formData.meses.reduce((total, mes) => {
-      console.log(total)
-      const completedWeeks = mes.semanas.filter(semana => semana.estado).length;
-      console.log(completedWeeks)
+      console.log(total);
+      const completedWeeks = mes.semanas.filter(
+        (semana) => semana.estado,
+      ).length;
+      console.log(completedWeeks);
       return total + completedWeeks;
     }, 0);
-    
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
-      servicios: completedServices.toString()
+      servicios: completedServices.toString(),
     }));
   }, [formData.meses]);
+
+  const updateWeeksForMonth = (monthIndex: number, monthValue: string) => {
+    if (!monthValue) return;
+
+  console.log(monthValue)
+    const [year, month] = monthValue.split("-").map(Number);
+    console.log(month)
+    const weeks = getWeeksInMonth(year, month - 1); 
+    console.log(weeks)
+
+    weeks.map((weeknum)=>{console.log(weeknum)})
+
+    setFormData((prev) => {
+      const newMeses = [...prev.meses];
+      newMeses[monthIndex] = {
+        ...newMeses[monthIndex],
+        mes: monthValue,
+        semanas: weeks.map((weekNum, index) => ({
+          numero: index + 1,
+          estado: false,
+        })),
+      };
+      return { ...prev, meses: newMeses };
+    });
+  };
 
   const handleInputChange = (field: keyof Tarea, value: any) => {
     if (field === "servicios") return;
@@ -80,11 +108,15 @@ const TaskModal: React.FC<TaskModalProps> = ({
   };
 
   const handleMonthChange = (index: number, field: keyof Month, value: any) => {
-    setFormData((prev) => {
-      const newMeses = [...prev.meses];
-      newMeses[index] = { ...newMeses[index], [field]: value };
-      return { ...prev, meses: newMeses };
-    });
+    if (field == "mes") {
+      updateWeeksForMonth(index, value);
+    } else {
+      setFormData((prev) => {
+        const newMeses = [...prev.meses];
+        newMeses[index] = { ...newMeses[index], [field]: value };
+        return { ...prev, meses: newMeses };
+      });
+    }
   };
 
   const handleWeekChange = (
@@ -106,10 +138,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
         ...prev.meses,
         {
           mes: "",
-          semanas: Array.from({ length: 4 }, (_, i) => ({
-            numero: i + 1,
-            estado: false,
-          })),
+          semanas: [],
         },
       ],
     }));
@@ -179,7 +208,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
           {
             text: comment,
             createdAt: new Date().toISOString(),
-            _id: response._id
+            _id: response._id,
           },
         ],
       };
@@ -327,10 +356,10 @@ const TaskModal: React.FC<TaskModalProps> = ({
                         Eliminar
                       </button>
                     </div>
-                    <div className="grid grid-cols-4 gap-2">
-                      {mes.semanas.map((semana, weekIndex) => (
+                    <div className="grid grid-cols-5 gap-2">
+                      {mes.semanas.map((semana) => (
                         <div
-                          key={weekIndex}
+                          key={semana.numero}
                           className="flex items-center gap-2"
                         >
                           <label className="text-sm">
@@ -342,7 +371,9 @@ const TaskModal: React.FC<TaskModalProps> = ({
                             onChange={(e) =>
                               handleWeekChange(
                                 monthIndex,
-                                weekIndex,
+                                mes.semanas.findIndex(
+                                  (s) => s.numero === semana.numero,
+                                ),
                                 e.target.checked,
                               )
                             }
@@ -350,7 +381,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
                           />
                         </div>
                       ))}
-                    </div>
+                    </div>{" "}
                   </div>
                 ))}
               </div>

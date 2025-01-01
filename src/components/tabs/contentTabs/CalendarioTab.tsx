@@ -12,6 +12,9 @@ import {
 import { es } from "date-fns/locale";
 import { Tarea, TareaService } from "@/services/tareaService";
 import TaskModal from "@/components/inputs/crearTarea";
+import { getWeeksInMonth } from "@/utils/dateutils";
+import { MdOutlineEditCalendar } from "react-icons/md";
+import { IoTrashOutline } from "react-icons/io5";
 
 const MONTHS_TO_SHOW = 12;
 const CELL_WIDTH = 40;
@@ -24,11 +27,28 @@ export const CalendarioTab: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [currentTask, setCurrentTask] = useState<Tarea | null>(null);
 
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setStartDate(new Date(event.target.value));
     console.log(startDate);
   };
+
+
+  const handleSuccess = async () => {
+    try {
+      setLoading(true);
+      const data = await TareaService.getTareas(); // Fetch fresh data
+      setTareas(data);
+      setModalOpen(false);
+      setCurrentTask(null);
+    } catch (err) {
+      setError("Error al actualizar las tareas. Por favor, intenta nuevamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   useEffect(() => {
     const fetchTareas = async () => {
@@ -50,78 +70,11 @@ export const CalendarioTab: React.FC = () => {
     end: addMonths(startDate, MONTHS_TO_SHOW - 1),
   });
 
-  // Función para obtener el último día de un mes
-  function getLastDayOfMonth(year: number, month: number): number {
-    return new Date(year, month + 1, 0).getDate();
-  }
-
-  // Función para calcular las semanas de un mes
-  function getWeeksInMonth(year: number, month: number): number[] {
-    const firstDay: Date = new Date(year, month, 1);
-    const lastDay: Date = new Date(year, month, getLastDayOfMonth(year, month));
-    const weeks: number[] = [];
-
-    // Ajustar al lunes anterior si el mes no empieza en lunes
-    let currentDate: Date = new Date(firstDay);
-    const firstDayOfWeek: number = firstDay.getDay();
-    if (firstDayOfWeek !== 1) {
-      // Si no es lunes
-      currentDate.setDate(
-        currentDate.getDate() - (firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1),
-      );
-    }
-
-    let weekCounter: number = 1;
-    if (month === 0) {
-      // Enero siempre empieza en semana 1
-      weekCounter = 1;
-    } else {
-      // Calcular el número de semana basado en el mes
-      const daysFromYearStart: number = Math.floor(
-        (new Date(year, month, 1).getTime() - new Date(year, 0, 1).getTime()) /
-          (24 * 60 * 60 * 1000),
-      );
-      weekCounter = Math.floor(daysFromYearStart / 7) + 1;
-    }
-
-    // Iterar por semanas hasta el fin del mes
-    while (currentDate <= lastDay) {
-      const endOfWeek: Date = new Date(currentDate);
-      endOfWeek.setDate(endOfWeek.getDate() + 6);
-
-      // Si la semana termina en este mes, agregarla
-      if (endOfWeek.getMonth() === month) {
-        weeks.push(weekCounter);
-      }
-
-      weekCounter++;
-      currentDate.setDate(currentDate.getDate() + 7);
-
-      // Reiniciar contador en la semana 53
-      if (weekCounter > 52) weekCounter = 1;
-    }
-
-    return weeks;
-  }
-
   type WeekNumbersResult = {
     [key: string]: number[];
   };
 
   function generateWeekNumbers(year: number): WeekNumbersResult {
-    // const months = eachMonthOfInterval({
-    //   start: startDate,
-    //   end: addMonths(startDate, MONTHS_TO_SHOW - 1),
-    // });
-    //
-    // const result = {};
-    //
-    // // Generar semanas para cada mes
-    // months.forEach((monthName, index) => {
-    //   result[monthName] = getWeeksInMonth(year, index);
-    // });
-    //
-    // Reorganizar para que octubre sea el primer mes
     const finalResult: WeekNumbersResult = {};
 
     const adjustedStartDate: Date = new Date(
@@ -148,12 +101,6 @@ export const CalendarioTab: React.FC = () => {
 
   const monthWeeks = generateWeekNumbers(getYear(startDate));
 
-  // const informacion = generateWeekNumbers(2025);
-  // console.log(informacion)
-  // Object.entries(informacion).forEach(([month, weeks]) => {
-  //   console.log(`${month}: ${weeks.join(", ")}`);
-  // });
-  //
   const getTaskPosition = (tarea: Tarea) => {
     let cells: Array<{ month: string; week: number; weekIndex: number }> = [];
 
@@ -181,68 +128,38 @@ export const CalendarioTab: React.FC = () => {
     return cells;
   };
 
-  // const allWeeks = months.flatMap((month) =>
-  //   eachWeekOfInterval({ start: startOfMonth(month), end: endOfMonth(month) }),
-  // );
-  //
-  // const allWeeks = []
-  //
-  // months.forEach((monthName, index) => {
-  //   const weeksNumber = getWeeksInMonth(getYear(startDate), index);
-  //   [...weeksNumber].forEach((index) => {
-  //     allWeeks[index] = eachWeekOfInterval( {start: startDate, end: addMonths(startDate, MONTHS_TO_SHOW - 1) })[index]
-  //   })
-  // })
+  type Comment = {
+    text: string;
+    createdAt: string;
+    _id: string;
+  };
 
-type Comment = {
-  text: string;
-  createdAt: string;
-  _id: string;
-};
+  type Semana = {
+    numero: number;
+    estado: boolean;
+    _id: string;
+  };
 
-type Semana = {
-  numero: number;
-  estado: boolean;
-  _id: string;
-};
+  type Mes = {
+    mes: string; // "YYYY-MM"
+    semanas: Semana[];
+    _id: string;
+  };
 
-type Mes = {
-  mes: string; // "YYYY-MM"
-  semanas: Semana[];
-  _id: string;
-};
+  type TasksByCategory = {
+    [categoria: string]: Tarea[];
+  };
 
-// type Tarea = {
-//   _id: string;
-//   pos: string;
-//   equipo: string;
-//   area: string;
-//   servicios: string;
-//   categoria: string;
-//   meses: {
-//     mes: string;
-//     semanas: {
-//       numero: number;
-//       estado: boolean;
-//       _id: string;
-//     }[];
-//     _id: string;
-//   }[];
-//   status: string;
-//   description: string;
-//   comments: {
-//     text: string;
-//     createdAt: string;
-//     _id: string;
-//   }[];
-//   createdAt: string;
-//   updatedAt: string;
-//   __v: number;
-// };
+  const deleteTarea = async (taskId: string) => {
+    try {
+      await TareaService.deleteTarea(taskId);
 
-type TasksByCategory = {
-  [categoria: string]: Tarea[];
-};
+      setTareas((prevTasks) => prevTasks.filter((task) => task._id !== taskId));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const allWeeks: Date[] = [];
   eachWeekOfInterval({
     start: new Date(startDate).setDate(1),
@@ -259,7 +176,7 @@ type TasksByCategory = {
       }
       grouped[tarea.categoria].push(tarea);
     });
-    console.log(grouped)
+    console.log(grouped);
     return grouped;
   }, [tareas]);
 
@@ -275,16 +192,21 @@ type TasksByCategory = {
     <div className="p-6 bg-white rounded-lg shadow-md">
       <div className="flex flex-col md:flex-row justify-between items-center mb-4 ">
         <h2 className="text-2xl font-bold">Cronograma </h2>
-        <input type="date" onChange={handleDateChange} />
-        <div>
+        <div className="flex items-center gap-4">
+          <input
+            type="date"
+            onChange={handleDateChange}
+            className="px-3 py-2 border rounded-md"
+          />
           <button
             className="bg-lime-400 hover:bg-teal-500 text-white font-bold py-2 px-4 rounded"
-            onClick={() => setModalOpen(true)}
+            onClick={() => {
+              setCurrentTask(null); // Aseguramos que no hay tarea seleccionada
+              setModalOpen(true);
+            }}
           >
             Nueva tarea
           </button>
-
-          <TaskModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
         </div>
       </div>
       <div className="overflow-x-auto">
@@ -319,61 +241,50 @@ type TasksByCategory = {
                   <div className="bg-gray-100 py-2 px-4 font-semibold border-b border-gray-300">
                     {categoria}
                   </div>
-                  {tareas.map((tarea, index) => (
+                  {tareas.map((tarea) => (
                     <div
-                      key={index}
-                      style={{
-                        height: `${ROW_HEIGHT}px`,
-                        display: "flex",
-                        borderBottom: "1px solid #e2e8f0",
-                      }}
+                      key={tarea._id}
+                      className="flex h-[50px] border-b border-gray-200 group"
                     >
-                      <div
-                        style={{
-                          width: "125px",
-                          borderRight: "1px solid #e2e8f0",
-                          padding: "2px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {tarea.pos}
+                      <div className="w-[125px] border-r border-gray-200 p-2 flex items-center justify-between relative">
+                        <span>{tarea.pos}</span>
+                        <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-all flex bg-white shadow-sm rounded-md">
+                          <button
+                            className="p-1.5 hover:bg-gray-100 rounded-l-md transition-colors"
+                            onClick={() => {
+                              setCurrentTask(tarea);
+                              setModalOpen(true);
+                            }}
+                            title="Editar tarea"
+                          >
+                            <MdOutlineEditCalendar className="w-4 h-4" />
+                          </button>
+                          <button
+                            className="p-1.5 hover:bg-red-50 text-red-600 rounded-r-md transition-colors border-l border-gray-100"
+                            onClick={() => {
+                              if (
+                                window.confirm(
+                                  "¿Seguro que quieres eliminar esta tarea?",
+                                )
+                              ) {
+                                deleteTarea(tarea._id);
+                              }
+                            }}
+                            title="Eliminar tarea"
+                          >
+                            <IoTrashOutline className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                      <div
-                        style={{
-                          width: "125px",
-                          borderRight: "1px solid #e2e8f0",
-                          padding: "2px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
+
+                      {/* Otras columnas */}
+                      <div className="w-[125px] border-r border-gray-200 p-2 flex items-center justify-center">
                         {tarea.equipo}
                       </div>
-                      <div
-                        style={{
-                          width: "125px",
-                          borderRight: "1px solid #e2e8f0",
-                          padding: "2px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
+                      <div className="w-[125px] border-r border-gray-200 p-2 flex items-center justify-center">
                         {tarea.area}
                       </div>
-                      <div
-                        style={{
-                          width: "125px",
-                          borderRight: "1px solid #e2e8f0",
-                          padding: "2px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
+                      <div className="w-[125px] border-r border-gray-200 p-2 flex items-center justify-center">
                         {tarea.servicios}
                       </div>
                     </div>
@@ -484,6 +395,15 @@ type TasksByCategory = {
           </div>
         </div>
       </div>
+      <TaskModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setCurrentTask(null);
+        }}
+        initialData={currentTask}
+        onSuccess={handleSuccess}
+      />
     </div>
   );
 };
