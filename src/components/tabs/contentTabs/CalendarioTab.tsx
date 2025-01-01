@@ -248,7 +248,7 @@ export const CalendarioTab: React.FC = () => {
                     >
                       <div className="w-[125px] border-r border-gray-200 p-2 flex items-center justify-between relative">
                         <span>{tarea.pos}</span>
-                        <div className="absolute right-2 opacity-0 group-hover:opacity-100 transition-all flex bg-white shadow-sm rounded-md">
+                        <div className="absolute right-2 transition-all flex bg-white shadow-sm rounded-md">
                           <button
                             className="p-1.5 hover:bg-gray-100 rounded-l-md transition-colors"
                             onClick={() => {
