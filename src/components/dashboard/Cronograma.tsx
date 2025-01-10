@@ -5,7 +5,6 @@ import { Tabs } from "../tabs/Tabs";
 import { CalendarioTab } from "../tabs/contentTabs/CalendarioTab";
 import { MonthTab } from "../tabs/contentTabs/MonthTab";
 
-
 const Cronograma: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>("calendario");
 
@@ -16,12 +15,14 @@ const Cronograma: React.FC = () => {
 
       {/* Dynamic Content */}
       <div className="p-4">
-        {activeTab === "calendario"
-          ? <CalendarioTab />
-          : <MonthTab month={activeTab} />}
+        {activeTab === "calendario" ? (
+          <CalendarioTab />
+        ) : (
+          <MonthTab month={activeTab} />
+        )}
       </div>
     </div>
   );
-}
+};
 
 export default Cronograma;
