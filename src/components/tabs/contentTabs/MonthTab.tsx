@@ -3,6 +3,7 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { TareaService, Tarea } from "@/services/tareaService";
 import { IoTrashOutline } from "react-icons/io5";
+// import Tarea from "@/lib/models/Tarea";
 
 // Helper function to get status color
 const getStatusColor = (status: Tarea["status"]) => {
@@ -82,8 +83,6 @@ export const MonthTab = ({ month }: { month: string }) => {
       });
   }, [tasks, month, filterStatus, sortBy, searchTerm]);
 
-  console.log(monthTasks);
-
   const tasksByCategory = useMemo(() => {
     return monthTasks.reduce(
       (acc, task) => {
@@ -147,6 +146,69 @@ export const MonthTab = ({ month }: { month: string }) => {
     }
   };
 
+  const refreshTasks = async () => {
+    try {
+      const updatedTask = await TareaService.getTareas();
+      if (updatedTask) {
+        setTasks(updatedTask);
+      }
+    } catch (err) {
+      console.error("Error al refrescar la tarea:", err);
+    }
+  };
+
+  const handleStatussubTask = async (tIndex, mIndex, sIndex, nAvanze) => {
+    try {
+      const getColorForAvance = (avance) => {
+        switch (avance) {
+          case "pendiente":
+            return "#f39c12";
+          case "en-progreso":
+            return "#3498db";
+          case "completado":
+            return "#2ecc71";
+          case "no-aplica":
+            return "#95a5a6";
+          default:
+            return "#ffffff";
+        }
+      };
+
+      console.log(tIndex);
+      const task = tasks.find((t) => t._id === tIndex);
+      const updatedT = task ? {
+        ...task,
+        meses: task.meses.map((m, mesP) =>
+          mesP === mIndex
+            ? {
+              ...m,
+              semanas: m.semanas.map((s, semanaP) =>
+                semanaP === sIndex
+                  ? {
+                    ...s,
+                    avance: nAvanze,
+                    color: getColorForAvance(nAvanze),
+                  }
+                  : s,
+              ),
+            }
+            : m,
+        ),
+      } : { meses: [], _id: "", pos: "", equipo: "", area: "", servicios: "", categoria: "", status: "" };
+
+      console.log(nAvanze);
+
+      console.log(updatedT);
+
+      await TareaService.updateTarea(tIndex, updatedT);
+
+      await refreshTasks();
+    } catch (e) {
+      console.error(e);
+      setError("error al actualizar");
+    }
+  };
+
   const handleCommentChange = (taskId: string, text: string) => {
     setNewComments((prev) => ({
       ...prev,
@@ -195,32 +257,106 @@ export const MonthTab = ({ month }: { month: string }) => {
                   {task.status}
                 </span>
               </div>
-              <p className="text-sm text-gray-700 mb-2">Description: {task.description}</p>
+              <p className="text-sm text-gray-700 mb-2">
+                Description: {task.description}
+              </p>
+              <div className=" flex">
+                <table className="w-full border-collapse bg-white shadow-sm rounded-lg">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="px-6 py-3 text-left text-sm font-semibold text-gray-600">
+                        Mes
+                      </th>
+                      {(() => {
+                        const semanareal = task.meses.reduce(
+                          (prev, current) => {
+                            return prev.semanas.length > current.semanas.length
+                              ? prev
+                              : current;
+                          },
+                        );
+
+                        // console.log(semanareal);
+
+                        return [...semanareal.semanas].map((semana, sin) => (
+                          <th key={sin} className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                            Semana {semana.numero}
+                          </th>
+                        ));
+                      })()}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {task.meses.map(
+                      (
+                        mes: { semanas: any[]; mes: string },
+                        mIndex: number,
+                      ) => (
+                        <tr
+                          key={mIndex}
+                          className="border-t border-gray-200 hover:bg-gray-50"
+                        >
+                          <td className="px-6 py-4 text-sm font-medium text-gray-800">
+                            {format(parseISO(mes.mes), "MMMM yyyy", {
+                              locale: es,
+                            })}
+                          </td>
+                          {mes.semanas.map((semana, sIndex) => ( 
+                            semana.estado === true ? (
+                            <td key={sIndex} className="px-6 py-4 text-center">
+                              <select
+                                value={semana.avance}
+                                onChange={(e) =>
+                                  handleStatussubTask(
+                                    task._id,
+                                    mIndex,
+                                    sIndex,
+                                    e.target.value,
+                                  )
+                                }
+                                className="border rounded px-2 py-1 text-sm"
+                              >
+                                <option value="pendiente">Pendiente</option>
+                                <option value="en-progreso">En Progreso</option>
+                                <option value="completado">Completado</option>
+                                <option value="no-aplica">No Aplica</option>
+                              </select>
+                            </td>
+                          ) : ( <td key={sIndex} ></td> )
+                          ))}
+                        </tr>
+                      ),
+                    )}
+                  </tbody>
+                </table>
+              </div>
               <div className="mt-4">
                 <h5 className="font-medium mb-2">Comentarios</h5>
                 {task.comments && task.comments.length > 0 ? (
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {task.comments.map((comment, index) => (
-                      <div key={index} className=" flex space-x-2" >
-                        <button onClick={ () => deleteComment(task._id, comment._id) } >
+                      <div key={index} className=" flex space-x-2">
+                        <button
+                          onClick={() => deleteComment(task._id, comment._id)}
+                        >
                           <IoTrashOutline />
                         </button>
-                      <div
-                        key={index}
-                        className="bg-gray-100 p-2 rounded text-sm"
-                      >
-                        <span className="font-semibold">Usuario: </span>
-                        <span className="text-gray-600">
-                          (
-                          {format(
-                            new Date(comment.createdAt || new Date()),
-                            "dd MMM HH:mm",
-                            { locale: es },
-                          )}
-                          )
-                        </span>
-                        <p className="mt-1">{comment.text}</p>
-                      </div>
+                        <div
+                          key={index}
+                          className="bg-gray-100 p-2 rounded text-sm"
+                        >
+                          <span className="font-semibold">Usuario: </span>
+                          <span className="text-gray-600">
+                            (
+                            {format(
+                              new Date(comment.createdAt || new Date()),
+                              "dd MMM HH:mm",
+                              { locale: es },
+                            )}
+                            )
+                          </span>
+                          <p className="mt-1">{comment.text}</p>
+                        </div>
                       </div>
                     ))}
                   </div>

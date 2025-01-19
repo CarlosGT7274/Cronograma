@@ -26,6 +26,17 @@ const TareaSchema = new mongoose.Schema(
           {
             numero: { type: Number, required: true },
             estado: { type: Boolean, default: false },
+            avance: {
+              type: String,
+              enum: ["pendiente", "en-progreso", "completado", "no-aplica"],
+              default: "en-progreso",
+            },
+            color: {
+              type: String,
+              match: /^#([0-9A-F]{3}){1,2}$/i,
+              default: "#3b82f6",
+              required: true,
+            },
           },
         ],
       },

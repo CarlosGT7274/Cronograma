@@ -31,9 +31,7 @@ export const CalendarioTab: React.FC = () => {
 
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setStartDate(new Date(event.target.value));
-    console.log(startDate);
   };
-
 
   const handleSuccess = async () => {
     try {
@@ -43,12 +41,13 @@ export const CalendarioTab: React.FC = () => {
       setModalOpen(false);
       setCurrentTask(null);
     } catch (err) {
-      setError("Error al actualizar las tareas. Por favor, intenta nuevamente.");
+      setError(
+        "Error al actualizar las tareas. Por favor, intenta nuevamente.",
+      );
     } finally {
       setLoading(false);
     }
   };
-
 
   useEffect(() => {
     const fetchTareas = async () => {
@@ -94,12 +93,24 @@ export const CalendarioTab: React.FC = () => {
     allMonths.forEach((month) => {
       const key: string = month.toISOString().slice(0, 10); // Solo año y mes
       finalResult[key] = getWeeksInMonth(month.getFullYear(), month.getMonth());
+      console.log(getWeeksInMonth(2025, 2))
+      console.log(getWeeksInMonth(2025, 3))
+
     });
+
 
     return finalResult;
   }
 
   const monthWeeks = generateWeekNumbers(getYear(startDate));
+
+  const allWeeks: Date[] = [];
+  eachWeekOfInterval({
+    start: new Date(startDate).setDate(1),
+    end: addMonths(new Date(startDate).setDate(1), MONTHS_TO_SHOW),
+  }).forEach((weekStart) => {
+    allWeeks.push(weekStart); // Simplemente agrega los valores al arreglo
+  });
 
   const getTaskPosition = (tarea: Tarea) => {
     let cells: Array<{ month: string; week: number; weekIndex: number }> = [];
@@ -137,6 +148,8 @@ export const CalendarioTab: React.FC = () => {
   type Semana = {
     numero: number;
     estado: boolean;
+    avance: string;
+    color: string;
     _id: string;
   };
 
@@ -160,13 +173,6 @@ export const CalendarioTab: React.FC = () => {
     }
   };
 
-  const allWeeks: Date[] = [];
-  eachWeekOfInterval({
-    start: new Date(startDate).setDate(1),
-    end: addMonths(new Date(startDate).setDate(1), MONTHS_TO_SHOW),
-  }).forEach((weekStart) => {
-    allWeeks.push(weekStart); // Simplemente agrega los valores al arreglo
-  });
 
   const tasksByCategory = useMemo<TasksByCategory>(() => {
     const grouped: TasksByCategory = {};
@@ -176,7 +182,6 @@ export const CalendarioTab: React.FC = () => {
       }
       grouped[tarea.categoria].push(tarea);
     });
-    console.log(grouped);
     return grouped;
   }, [tareas]);
 
@@ -300,6 +305,7 @@ export const CalendarioTab: React.FC = () => {
                   borderBottom: "2px solid #e2e8f0",
                 }}
               >
+              
                 {Object.entries(monthWeeks).map(([date, weeks]) => (
                   <div
                     key={date}
@@ -312,7 +318,7 @@ export const CalendarioTab: React.FC = () => {
                       {/* {date} */}
                       {format(parseISO(date), "MMMM yyyy", { locale: es })}
                     </div>
-
+                    
                     <div style={{ display: "flex" }}>
                       {weeks.map((sn) => (
                         <div
@@ -368,23 +374,35 @@ export const CalendarioTab: React.FC = () => {
                           ))}
 
                           {/* Task cells */}
-                          {cells.map((cell, cellIndex) => (
-                            <div
-                              key={cellIndex}
-                              style={{
-                                position: "absolute",
-                                left: `${cell.weekIndex * CELL_WIDTH}px`,
-                                width: `${CELL_WIDTH}px`,
-                                height: "80%",
-                                top: "10%",
-                                backgroundColor: "#3b82f6",
-                                borderRadius: "4px",
-                                zIndex: 10,
-                              }}
-                              title={`${tarea.servicios}: ${cell.month} - Semana ${cell.week}`}
-                              className="hover:opacity-80 transition-opacity duration-200"
-                            />
-                          ))}
+                          {cells.map((cell, cellIndex) => {
+                            
+                            const mes = tarea.meses.find(
+                              (m) => m.mes === cell.month,
+                            );
+                            const semana = mes?.semanas.find(
+                              (s) => s.numero === cell.week,
+                            );
+
+                              // console.log(semana?.color)
+
+                            return (
+                              <div
+                                key={cellIndex}
+                                style={{
+                                  position: "absolute",
+                                  left: `${cell.weekIndex * CELL_WIDTH}px`,
+                                  width: `${CELL_WIDTH}px`,
+                                  height: "80%",
+                                  top: "10%",
+                                  backgroundColor: semana?.color || "#3b82f6", // Usa el color de la semana o un color por defecto
+                                  borderRadius: "4px",
+                                  zIndex: 10,
+                                }}
+                                title={`${tarea.servicios}: ${cell.month} - Semana ${cell.week}`}
+                                className="hover:opacity-80 transition-opacity duration-200"
+                              />
+                            );
+                          })}
                         </div>
                       );
                     })}

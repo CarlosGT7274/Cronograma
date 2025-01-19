@@ -27,6 +27,8 @@ export interface Comentario {
 interface Week {
   numero: number;
   estado: boolean;
+  avance: string;
+  color: string;
 }
 
 interface Month {
@@ -92,6 +94,8 @@ export interface Tarea {
     semanas: {
       numero: number;
       estado: boolean;
+      avance: string;
+      color: string;
     }[];
   }[];
   status: string;

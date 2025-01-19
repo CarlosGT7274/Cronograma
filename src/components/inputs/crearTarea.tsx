@@ -7,6 +7,8 @@ import { getWeeksInMonth } from "@/utils/dateutils";
 interface Week {
   numero: number;
   estado: boolean;
+  avance: string;
+  color: string;
 }
 
 interface Month {
@@ -94,6 +96,8 @@ const TaskModal: React.FC<TaskModalProps> = ({
         ...newMeses[monthIndex],
         mes: monthValue,
         semanas: weeks.map((weekNum, index) => ({
+          avance: "en-progreso",
+          color: "#3b82f6",
           numero: index + 1,
           estado: false,
         })),
