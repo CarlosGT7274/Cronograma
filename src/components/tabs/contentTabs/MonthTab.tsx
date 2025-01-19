@@ -157,59 +157,74 @@ export const MonthTab = ({ month }: { month: string }) => {
     }
   };
 
-  const handleStatussubTask = async (tIndex, mIndex, sIndex, nAvanze) => {
-    try {
-      const getColorForAvance = (avance) => {
-        switch (avance) {
-          case "pendiente":
-            return "#f39c12";
-          case "en-progreso":
-            return "#3498db";
-          case "completado":
-            return "#2ecc71";
-          case "no-aplica":
-            return "#95a5a6";
-          default:
-            return "#ffffff";
-        }
-      };
+const handleStatussubTask = async (
+  taskId: string, 
+  targetMes: string, // Cambiamos mIndex por targetMes
+  sIndex: number, 
+  nAvanze: string
+) => {
+  try {
+    const getColorForAvance = (avance: string) => {
+      switch (avance) {
+        case "pendiente": return "#f39c12";
+        case "en-progreso": return "#3498db";
+        case "completado": return "#2ecc71";
+        case "no-aplica": return "#95a5a6";
+        default: return "#ffffff";
+      }
+    };
 
-      console.log(tIndex);
-      const task = tasks.find((t) => t._id === tIndex);
-      const updatedT = task ? {
-        ...task,
-        meses: task.meses.map((m, mesP) =>
-          mesP === mIndex
-            ? {
-              ...m,
-              semanas: m.semanas.map((s, semanaP) =>
-                semanaP === sIndex
-                  ? {
-                    ...s,
-                    avance: nAvanze,
-                    color: getColorForAvance(nAvanze),
-                  }
-                  : s,
-              ),
-            }
-            : m,
-        ),
-      } : { meses: [], _id: "", pos: "", equipo: "", area: "", servicios: "", categoria: "", status: "" };
-
-      console.log(nAvanze);
-
-      console.log(updatedT);
-
-      await TareaService.updateTarea(tIndex, updatedT);
-
-      await refreshTasks();
-    } catch (e) {
-      console.error(e);
-      setError("error al actualizar");
+    const task = tasks.find((t) => t._id === taskId);
+    if (!task) {
+      console.error('Tarea no encontrada');
+      return;
     }
-  };
 
-  const handleCommentChange = (taskId: string, text: string) => {
+    // Ahora buscamos el mes exacto usando el YYYY-MM
+    const updatedT = {
+      ...task,
+      meses: task.meses.map(m => {
+        // Comparamos directamente con el mes completo
+        if (m.mes === targetMes) {
+          return {
+            ...m,
+            semanas: m.semanas.map((s, idx) => {
+              if (idx === sIndex) {
+                return {
+                  ...s,
+                  avance: nAvanze,
+                  color: getColorForAvance(nAvanze)
+                };
+              }
+              return s;
+            })
+          };
+        }
+        return m;
+      })
+    };
+
+    // Debug logs
+    console.log('Task ID:', taskId);
+    console.log('Target Month:', targetMes);
+    console.log('Semana Index:', sIndex);
+    console.log('Nuevo Avance:', nAvanze);
+    console.log('Updated Task:', updatedT);
+
+    await TareaService.updateTarea(taskId, updatedT);
+    
+    setTasks(prevTasks => 
+      prevTasks.map(t => 
+        t._id === taskId ? updatedT : t
+      )
+    );
+
+    await refreshTasks();
+  } catch (e) {
+    console.error('Error al actualizar el estado:', e);
+    setError("Error al actualizar el estado de la tarea");
+  }
+};  const handleCommentChange = (taskId: string, text: string) => {
     setNewComments((prev) => ({
       ...prev,
       [taskId]: text,
@@ -279,7 +294,10 @@ export const MonthTab = ({ month }: { month: string }) => {
                         // console.log(semanareal);
 
                         return [...semanareal.semanas].map((semana, sin) => (
-                          <th key={sin} className="px-6 py-3 text-center text-sm font-semibold text-gray-600">
+                          <th
+                            key={sin}
+                            className="px-6 py-3 text-center text-sm font-semibold text-gray-600"
+                          >
                             Semana {semana.numero}
                           </th>
                         ));
@@ -287,11 +305,28 @@ export const MonthTab = ({ month }: { month: string }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {task.meses.map(
-                      (
-                        mes: { semanas: any[]; mes: string },
-                        mIndex: number,
-                      ) => (
+                    {task.meses
+                      .filter((mes) => {
+                        const monthNumbers = {
+                          enero: "01",
+                          febrero: "02",
+                          marzo: "03",
+                          abril: "04",
+                          mayo: "05",
+                          junio: "06",
+                          julio: "07",
+                          agosto: "08",
+                          septiembre: "09",
+                          octubre: "10",
+                          noviembre: "11",
+                          diciembre: "12",
+                        };
+                        const [year, monthNumber] = mes.mes.split("-");
+                        return (
+                          monthNumber === monthNumbers[month.toLowerCase()]
+                        );
+                      })
+                      .map((mes, mIndex) => (
                         <tr
                           key={mIndex}
                           className="border-t border-gray-200 hover:bg-gray-50"
@@ -301,32 +336,38 @@ export const MonthTab = ({ month }: { month: string }) => {
                               locale: es,
                             })}
                           </td>
-                          {mes.semanas.map((semana, sIndex) => ( 
+                          {mes.semanas.map((semana, sIndex) =>
                             semana.estado === true ? (
-                            <td key={sIndex} className="px-6 py-4 text-center">
-                              <select
-                                value={semana.avance}
-                                onChange={(e) =>
-                                  handleStatussubTask(
-                                    task._id,
-                                    mIndex,
-                                    sIndex,
-                                    e.target.value,
-                                  )
-                                }
-                                className="border rounded px-2 py-1 text-sm"
+                              <td
+                                key={sIndex}
+                                className="px-6 py-4 text-center"
                               >
-                                <option value="pendiente">Pendiente</option>
-                                <option value="en-progreso">En Progreso</option>
-                                <option value="completado">Completado</option>
-                                <option value="no-aplica">No Aplica</option>
-                              </select>
-                            </td>
-                          ) : ( <td key={sIndex} ></td> )
-                          ))}
+                                <select
+                                  value={semana.avance}
+                                  onChange={(e) =>
+                                    handleStatussubTask(
+                                      task._id,
+                                      mes.mes,
+                                      sIndex,
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="border rounded px-2 py-1 text-sm"
+                                >
+                                  <option value="pendiente">Pendiente</option>
+                                  <option value="en-progreso">
+                                    En Progreso
+                                  </option>
+                                  <option value="completado">Completado</option>
+                                  <option value="no-aplica">No Aplica</option>
+                                </select>
+                              </td>
+                            ) : (
+                              <td key={sIndex}></td>
+                            ),
+                          )}
                         </tr>
-                      ),
-                    )}
+                      ))}
                   </tbody>
                 </table>
               </div>
