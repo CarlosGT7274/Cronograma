@@ -1,23 +1,24 @@
 "use client";
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AuthService } from '@/services/authService';
-import Link from 'next/link';
-import { useAuth } from './authProvider';
+import React, { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { AuthService } from "@/services/authService";
+import Link from "next/link";
+import { useAuth } from "./authProvider";
 
 const LoginForm = () => {
   const router = useRouter();
   const { login } = useAuth();
+  const searchParams = useSearchParams()
   const [formData, setFormData] = useState({
-    correo: '',
-    contraseña: ''
+    correo: "",
+    contraseña: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -26,11 +27,27 @@ const LoginForm = () => {
     try {
       const user = await AuthService.login(formData);
       login(user);
-      router.push('/');
+      router.push("/");
     } catch (error) {
-      setError('Credenciales inválidas');
+      setError("Credenciales inválidas");
     }
   };
+
+   useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const user = await AuthService.checkSession();
+        if (user) {
+          login(user);
+          const from = searchParams.get("from") || "/";
+          router.push(from);
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      }
+    };
+    checkSession();
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -67,11 +84,9 @@ const LoginForm = () => {
           </div>
 
           {error && (
-            <div className="text-red-500 text-sm text-center">
-              {error}
-            </div>
+            <div className="text-red-500 text-sm text-center">{error}</div>
           )}
-                    <div>
+          <div>
             <button
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
@@ -81,7 +96,10 @@ const LoginForm = () => {
           </div>
           <div className="flex items-center justify-between">
             <div className="text-sm">
-              <Link href="/register" className="text-indigo-600 hover:text-indigo-500">
+              <Link
+                href="/register"
+                className="text-indigo-600 hover:text-indigo-500"
+              >
                 ¿No tienes cuenta? Regístrate
               </Link>
             </div>

@@ -3,14 +3,13 @@ import React, { useState, ReactNode } from "react";
 import { useAuth } from "../auth/authProvider";
 import Link from "next/link";
 
-
 export default function DefaultLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const { user, logout } = useAuth();
-  
+
   return (
     <div className="flex h-screen overflow-hidden">
       <div className="relative flex flex-1 flex-col overflow-y-auto overflow-x-hidden">
@@ -21,7 +20,7 @@ export default function DefaultLayout({
               {/* Logo o título */}
               <h1 className="text-xl font-bold">Cronograma</h1>
             </div>
-            
+
             {/* Navigation */}
             <nav className="flex items-center gap-3">
               {user ? (
@@ -33,6 +32,7 @@ export default function DefaultLayout({
                   >
                     Cerrar Sesión
                   </button>
+                  { user.roles.map((user, uIndex) => user.nombre === "admin" ? (<button>configuracion</button>) : null) }
                 </>
               ) : (
                 <>
@@ -64,4 +64,3 @@ export default function DefaultLayout({
     </div>
   );
 }
-

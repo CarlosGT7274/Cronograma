@@ -24,5 +24,10 @@ export const AuthService = {
 
   checkRole: (user: User, requiredRole: string): boolean => {
     return user.roles.some(role => role.nombre === requiredRole && role.estado);
+  },
+
+  checkSession: async () => {
+    const data = await axios.get(AUTH_URL + "/check")
+    return data.data.user
   }
 };
