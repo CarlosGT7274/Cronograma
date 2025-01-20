@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, ReactNode } from "react";
-import { useAuth } from "../auth/authProvider";
+/* import { useAuth } from "../auth/authProvider"; */
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function DefaultLayout({
   children,
@@ -18,7 +19,9 @@ export default function DefaultLayout({
           <div className="flex flex-grow items-center justify-between py-4 px-4 shadow-2">
             <div className="flex items-center gap-2 sm:gap-4">
               {/* Logo o título */}
-              <h1 className="text-xl font-bold">Cronograma</h1>
+              <Link href={"/"}>
+                <h1 className="text-xl font-bold">Cronograma</h1>
+              </Link>
             </div>
 
             {/* Navigation */}
@@ -34,7 +37,7 @@ export default function DefaultLayout({
                   </button>
                   {user.roles.map((user, uIndex) =>
                     user.nombre === "admin" ? (
-                      <Link key={uIndex} href={"/users"}>Roles</Link>
+                      <Link key={uIndex} href={"/users"} className="rounded bg-orange-600 px-4 py-2 text-white" >Roles</Link>
                     ) : null,
                   )}
                 </>

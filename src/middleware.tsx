@@ -2,17 +2,25 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-export function middleware(request: NextRequest) {
-  // Obtener la cookie de sesión o token
-  const session = request.cookies.get("session")
+// Lista de rutas públicas que no requieren autenticación
+const publicRoutes = ['/login', '/register'];
 
-  // Si estamos en /login y hay sesión, redirigir a /
-  if (request.nextUrl.pathname === "/login" && session) {
-    return NextResponse.redirect(new URL("/", request.url))
+export function middleware(request: NextRequest) {
+    console.log('Middleware intercepting:', request.nextUrl.pathname);
+
+  // Si la ruta es pública, no aplicamos redirecciones
+  if (publicRoutes.includes(request.nextUrl.pathname)) {
+    // Si hay sesión y está en login/register, redirigir a home
+    const session = request.cookies.get("session")
+    if (session) {
+      return NextResponse.redirect(new URL("/", request.url))
+    }
+    return NextResponse.next()
   }
 
-  // Si no estamos en /login y no hay sesión, redirigir a /login
-  if (request.nextUrl.pathname !== "/login" && !session) {
+  // Para rutas protegidas, verificar sesión
+  const session = request.cookies.get("session")
+  if (!session) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
@@ -20,7 +28,15 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    /*
+     * Match all request paths except:
+     * - api routes
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public files (robots.txt, etc.)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico|public).*)'
+  ]
 }
-
-

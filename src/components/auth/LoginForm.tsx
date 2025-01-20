@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { AuthService } from "@/services/authService"
+import { useAuth } from "@/contexts/AuthContext"
 
 interface LoginCredentials {
   correo: string
@@ -13,6 +14,7 @@ interface LoginCredentials {
 
 export default function LoginForm() {
   const router = useRouter()
+  const { login } = useAuth();
   const [formData, setFormData] = useState<LoginCredentials>({
     correo: "",
     contraseña: "",
@@ -39,34 +41,34 @@ export default function LoginForm() {
     checkExistingSession()
   }, []) // Remover router de las dependencias para evitar re-renders innecesarios
 
+
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const user = await AuthService.login(formData);
+      if (user) {
+        login(user);
+        router.push("/");
+      }
+    } catch (error) {
+      console.error("Error durante el inicio de sesión:", error);
+      setError("Credenciales inválidas o error de conexión");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     })
   }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
-
-    try {
-      const user = await AuthService.login(formData)
-      if (user) {
-        // Usar replace en lugar de push para evitar entradas en el historial
-        router.replace("/")
-      } else {
-        setError("Error al iniciar sesión. Por favor, intente de nuevo.")
-      }
-    } catch (error) {
-      console.error("Error durante el inicio de sesión:", error)
-      setError("Credenciales inválidas o error de conexión")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   // Mostrar un estado de carga mientras se verifica la sesión
   if (isCheckingSession) {
     return (

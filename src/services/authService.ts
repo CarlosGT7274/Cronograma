@@ -22,7 +22,7 @@ export const AuthService = {
     const response = await axios.post(AUTH_URL + "/login", credentials);
     console.log(credentials)
     console.log(response.data)
-    localStorage.setItem("user", JSON.stringify(response.data.user));
+    // localStorage.setItem("user", JSON.stringify(response.data.user));
     return response.data.user;
   },
 

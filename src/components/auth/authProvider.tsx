@@ -1,4 +1,4 @@
-"use client";
+"use client"
 import {
   createContext,
   useContext,
@@ -20,27 +20,40 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (user: User) => void;
-  logout: () => void;
+  isLoading: boolean;
+  login: (userData: User) => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Verificar si hay un usuario en localStorage al cargar
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const initAuth = async () => {
+      try {
+        // Intentar recuperar la sesión del servidor
+        const user = await AuthService.checkSession();
+        if (user) {
+          setUser(user);
+          localStorage.setItem("user", JSON.stringify(user));
+        }
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        localStorage.removeItem("user");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
   }, []);
 
   const login = (userData: User) => {
     setUser(userData);
-    console.log(user)
     localStorage.setItem("user", JSON.stringify(userData));
   };
 
@@ -50,14 +63,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       localStorage.removeItem("user");
       router.push("/login");
-      router.refresh();
     } catch (error) {
-      console.error(error);
+      console.error("Error during logout:", error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

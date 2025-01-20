@@ -93,8 +93,8 @@ export const CalendarioTab: React.FC = () => {
     allMonths.forEach((month) => {
       const key: string = month.toISOString().slice(0, 10); // Solo año y mes
       finalResult[key] = getWeeksInMonth(month.getFullYear(), month.getMonth());
-      console.log(getWeeksInMonth(2025, 2))
-      console.log(getWeeksInMonth(2025, 3))
+      /* console.log(getWeeksInMonth(2025, 2)) */
+      /* console.log(getWeeksInMonth(2025, 3)) */
 
     });
 

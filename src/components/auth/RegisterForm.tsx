@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 const RegisterForm = () => {
   const router = useRouter();
   const [formData, setFormData] = useState({
+    nombre: '',
     correo: '',
     contraseña: '',
     confirmarContraseña: ''
@@ -28,12 +29,14 @@ const RegisterForm = () => {
 
     try {
       await RegisterService.register({
+        nombre: formData.nombre,
         correo: formData.correo,
         contraseña: formData.contraseña
       });
       router.push('/login');
-    } catch (error) {
-      setError('Error al registrar usuario');
+    } catch (e) {
+      const [[, errorMessage]] = Object.entries(e.response.data)
+      setError(`${errorMessage}`);
     }
   };
 
@@ -47,6 +50,17 @@ const RegisterForm = () => {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <input
+                name='nombre'
+                type='text'
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                placeholder='Nombre de usuario'
+                value={ formData.nombre } 
+                onChange={handleChange}
+              />
+            </div>
             <div>
               <input
                 name="correo"

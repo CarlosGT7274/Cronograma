@@ -1,33 +1,38 @@
 "use client";
-import { useAuth } from "@/components/auth/authProvider";
+/* import { useAuth } from "@/components/auth/authProvider"; */
 import Cronograma from "@/components/dashboard/Cronograma";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AuthService } from "@/services/authService";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!user) {
-      router.push("/login");
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
     }
-  }, [user, router]);
+  }, [isLoading, isAuthenticated, router]);
 
-
-  console.log(user)
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   if (!user) {
-    return null
+    return null;
   }
 
   return (
     <DefaultLayout>
-        <Cronograma />
+      <Cronograma />
     </DefaultLayout>
   );
 }

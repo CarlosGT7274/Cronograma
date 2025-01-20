@@ -3,6 +3,7 @@ import { User } from './authService';
 const REGISTER_URL = '/api/register';
 
 interface RegisterData {
+  nombre: string;
   correo: string;
   contraseña: string;
   roles?: Array<{
