@@ -4,18 +4,20 @@ import { NextRequest, NextResponse } from "next/server";
 
 
 export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
   try {
     const userData = await req.json();
     await dbConnect();
+    const { id } = await params;
+
     
     // Evitar cambiar la contraseña desde aquí
     delete userData.contraseña;
     
     const user = await User.findByIdAndUpdate(
-      params.id, // Usar el ID de los parámetros de la URL
+      id, // Usar el ID de los parámetros de la URL
       { $set: userData },
       { new: true }
     ).select('-contraseña');

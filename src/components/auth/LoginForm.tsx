@@ -39,7 +39,7 @@ export default function LoginForm() {
     }
 
     checkExistingSession()
-  }, []) // Remover router de las dependencias para evitar re-renders innecesarios
+  }, [router]) // Remover router de las dependencias para evitar re-renders innecesarios
 
 
   
