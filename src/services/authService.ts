@@ -17,9 +17,17 @@ export interface User {
 }
 
 export const AuthService = {
+
   login: async (credentials: LoginCredentials): Promise<User> => {
-    const response = await axios.post(AUTH_URL, credentials);
+    const response = await axios.post(AUTH_URL + "/login", credentials);
+    console.log(credentials)
+    console.log(response.data)
     return response.data.user;
+  },
+
+  logout: async () => {
+    const response = await axios.post(AUTH_URL + "/logout")
+    return response.data
   },
 
   checkRole: (user: User, requiredRole: string): boolean => {

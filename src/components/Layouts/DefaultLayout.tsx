@@ -32,23 +32,14 @@ export default function DefaultLayout({
                   >
                     Cerrar Sesión
                   </button>
-                  { user.roles.map((user, uIndex) => user.nombre === "admin" ? (<button>configuracion</button>) : null) }
+                  {user.roles.map((user, uIndex) =>
+                    user.nombre === "admin" ? (
+                      <Link key={uIndex} href={"/users"}>Roles</Link>
+                    ) : null,
+                  )}
                 </>
               ) : (
-                <>
-                  <Link
-                    href="/login"
-                    className="rounded bg-blue-500 px-4 py-2 text-sm text-white hover:bg-blue-600"
-                  >
-                    Iniciar Sesión
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="rounded bg-green-500 px-4 py-2 text-sm text-white hover:bg-green-600"
-                  >
-                    Registrarse
-                  </Link>
-                </>
+                <></>
               )}
             </nav>
           </div>

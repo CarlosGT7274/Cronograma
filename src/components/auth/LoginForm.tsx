@@ -1,61 +1,79 @@
-"use client";
-import React, { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { AuthService } from "@/services/authService";
-import Link from "next/link";
-import { useAuth } from "./authProvider";
+"use client"
 
-const LoginForm = () => {
-  const router = useRouter();
-  const { login } = useAuth();
-  const searchParams = useSearchParams()
-  const [formData, setFormData] = useState({
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
+import { useAuth } from "@/contexts/AuthContext"
+import { AuthService } from "@/services/authService"
+
+interface LoginCredentials {
+  correo: string
+  contraseña: string
+}
+
+interface User {
+  // Asegúrate de que esta interfaz coincida con la estructura de usuario que devuelve tu backend
+  id: string
+  nombre: string
+  correo: string
+  roles: Array<{ nombre: string; estado: boolean }>
+}
+export default function LoginForm() {
+  const router = useRouter()
+  const [formData, setFormData] = useState<LoginCredentials>({
     correo: "",
     contraseña: "",
-  });
-  const [error, setError] = useState("");
+  })
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      try {
+        const user = await AuthService.checkSession()
+        if (user) {
+          router.push("/")
+        }
+      } catch (error) {
+        console.error("Error checking session:", error)
+      }
+    }
+
+    checkExistingSession()
+  }, [router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
-    });
-  };
+    })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
+    setIsLoading(true)
+    setError("")
     try {
-      const user = await AuthService.login(formData);
-      login(user);
-      router.push("/");
-    } catch (error) {
-      setError("Credenciales inválidas");
-    }
-  };
-
-   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const user = await AuthService.checkSession();
-        if (user) {
-          login(user);
-          const from = searchParams.get("from") || "/";
-          router.push(from);
-        }
-      } catch (error) {
-        console.error("Error checking session:", error);
+      const user = await AuthService.login(formData)
+      console.log(user)
+      if (user) {
+        router.push("/")
+      } else {
+        setError("Error al iniciar sesión. Por favor, intente de nuevo.")
       }
-    };
-    checkSession();
-  }, []);
+    } catch (error) {
+      console.error("Error durante el inicio de sesión:", error)
+      setError("Credenciales inválidas o error de conexión")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Iniciar Sesión
-          </h2>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Iniciar Sesión</h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
@@ -82,24 +100,19 @@ const LoginForm = () => {
               />
             </div>
           </div>
-
-          {error && (
-            <div className="text-red-500 text-sm text-center">{error}</div>
-          )}
+          {error && <div className="text-red-500 text-sm text-center">{error}</div>}
           <div>
             <button
               type="submit"
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              disabled={isLoading}
             >
-              Iniciar Sesión
+              {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
             </button>
           </div>
           <div className="flex items-center justify-between">
             <div className="text-sm">
-              <Link
-                href="/register"
-                className="text-indigo-600 hover:text-indigo-500"
-              >
+              <Link href="/register" className="text-indigo-600 hover:text-indigo-500">
                 ¿No tienes cuenta? Regístrate
               </Link>
             </div>
@@ -107,7 +120,7 @@ const LoginForm = () => {
         </form>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default LoginForm;
+

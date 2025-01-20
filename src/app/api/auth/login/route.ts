@@ -9,6 +9,7 @@ export async function POST(req: Request) {
     await dbConnect();
     const { correo, contraseña } = await req.json();
     const user = await User.findOne({ correo });
+    console.log(user)
 
     if (!user || !(await bcrypt.compare(contraseña, user.contraseña))) {
       return NextResponse.json(

@@ -1,11 +1,12 @@
-"use client"
+"use client";
 import { useAuth } from "@/components/auth/authProvider";
 import Cronograma from "@/components/dashboard/Cronograma";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthService } from "@/services/authService";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect } from 'react';
-
+import { useEffect } from "react";
 
 export default function Home() {
   const { user } = useAuth();
@@ -13,17 +14,22 @@ export default function Home() {
 
   useEffect(() => {
     if (!user) {
-      router.push('/login');
+      router.push("/login");
     }
   }, [user, router]);
 
+
+  console.log(user)
+
   if (!user) {
-    return null;  // o un componente de carga
+    return null
   }
 
   return (
+    <AuthProvider>
     <DefaultLayout>
-      <Cronograma />
+        <Cronograma />
     </DefaultLayout>
+    </AuthProvider>
   );
 }

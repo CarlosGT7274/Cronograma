@@ -1,5 +1,6 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 // Define las rutas públicas
 const publicRoutes = ['/login', '/register', '/api/auth/login'];
@@ -11,7 +12,7 @@ export function middleware(request: NextRequest) {
   // Si es una ruta pública, permitir acceso sin verificación
   if (publicRoutes.includes(pathname) || 
       pathname.startsWith('/_next') || 
-      pathname.startsWith('/api/auth') ||
+      pathname.startsWith('/api/auth/login') || // Permitir acceso sin verificación a esta ruta
       pathname.includes('.') // Para archivos estáticos
   ) {
     return NextResponse.next();
@@ -30,13 +31,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Hacer match con todas las rutas excepto:
-     * - archivos (que contienen un punto)
-     * - _next/static (archivos estáticos)
-     * - _next/image (archivos de optimización de imágenes)
-     * - favicon.ico (archivo favicon)
-     */
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
 };
+
