@@ -1,37 +1,26 @@
 
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-// Define las rutas públicas
-const publicRoutes = ['/login', '/register', '/api/auth/login'];
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
-  const session = request.cookies.get('session');
-  const { pathname } = request.nextUrl;
+  // Obtener la cookie de sesión o token
+  const session = request.cookies.get("session")
 
-  // Si es una ruta pública, permitir acceso sin verificación
-  if (publicRoutes.includes(pathname) || 
-      pathname.startsWith('/_next') || 
-      pathname.startsWith('/api/auth/login') || // Permitir acceso sin verificación a esta ruta
-      pathname.includes('.') // Para archivos estáticos
-  ) {
-    return NextResponse.next();
+  // Si estamos en /login y hay sesión, redirigir a /
+  if (request.nextUrl.pathname === "/login" && session) {
+    return NextResponse.redirect(new URL("/", request.url))
   }
 
-  // Si no hay sesión y no es una ruta pública, redirigir a login
-  if (!session) {
-    const url = new URL('/login', request.url);
-    url.searchParams.set('from', pathname);
-    return NextResponse.redirect(url);
+  // Si no estamos en /login y no hay sesión, redirigir a /login
+  if (request.nextUrl.pathname !== "/login" && !session) {
+    return NextResponse.redirect(new URL("/login", request.url))
   }
 
-  // Si hay sesión, permitir el acceso
-  return NextResponse.next();
+  return NextResponse.next()
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
-};
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+}
+
 

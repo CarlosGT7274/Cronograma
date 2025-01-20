@@ -26,10 +26,8 @@ export default function Home() {
   }
 
   return (
-    <AuthProvider>
     <DefaultLayout>
         <Cronograma />
     </DefaultLayout>
-    </AuthProvider>
   );
 }

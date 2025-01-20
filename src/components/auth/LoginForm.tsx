@@ -1,9 +1,9 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { useAuth } from "@/contexts/AuthContext"
 import { AuthService } from "@/services/authService"
 
 interface LoginCredentials {
@@ -11,13 +11,6 @@ interface LoginCredentials {
   contraseña: string
 }
 
-interface User {
-  // Asegúrate de que esta interfaz coincida con la estructura de usuario que devuelve tu backend
-  id: string
-  nombre: string
-  correo: string
-  roles: Array<{ nombre: string; estado: boolean }>
-}
 export default function LoginForm() {
   const router = useRouter()
   const [formData, setFormData] = useState<LoginCredentials>({
@@ -26,21 +19,25 @@ export default function LoginForm() {
   })
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isCheckingSession, setIsCheckingSession] = useState(true)
 
   useEffect(() => {
     const checkExistingSession = async () => {
       try {
         const user = await AuthService.checkSession()
         if (user) {
-          router.push("/")
+          // Solo redirigir si realmente hay un usuario autenticado
+          router.replace("/") // Usar replace en lugar de push para evitar entradas en el historial
         }
       } catch (error) {
         console.error("Error checking session:", error)
+      } finally {
+        setIsCheckingSession(false)
       }
     }
 
     checkExistingSession()
-  }, [router])
+  }, []) // Remover router de las dependencias para evitar re-renders innecesarios
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -53,11 +50,12 @@ export default function LoginForm() {
     e.preventDefault()
     setIsLoading(true)
     setError("")
+
     try {
       const user = await AuthService.login(formData)
-      console.log(user)
       if (user) {
-        router.push("/")
+        // Usar replace en lugar de push para evitar entradas en el historial
+        router.replace("/")
       } else {
         setError("Error al iniciar sesión. Por favor, intente de nuevo.")
       }
@@ -67,6 +65,15 @@ export default function LoginForm() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Mostrar un estado de carga mientras se verifica la sesión
+  if (isCheckingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    )
   }
 
   return (
