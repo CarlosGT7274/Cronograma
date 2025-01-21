@@ -19,7 +19,7 @@ import { IoTrashOutline } from "react-icons/io5";
 const MONTHS_TO_SHOW = 12;
 const CELL_WIDTH = 40;
 const HEADER_HEIGHT = 80;
-const ROW_HEIGHT = 50;
+const ROW_HEIGHT = 75;
 
 export const CalendarioTab: React.FC = () => {
   const [tareas, setTareas] = useState<Tarea[]>([]);
@@ -249,7 +249,7 @@ export const CalendarioTab: React.FC = () => {
                   {tareas.map((tarea) => (
                     <div
                       key={tarea._id}
-                      className="flex h-[50px] border-b border-gray-200 group"
+                      className="flex h-[75px] border-b border-gray-200 group"
                     >
                       <div className="w-[125px] border-r border-gray-200 p-2 flex items-center justify-between relative">
                         <span>{tarea.pos}</span>
