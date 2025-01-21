@@ -15,6 +15,7 @@ import TaskModal from "@/components/inputs/crearTarea";
 import { getWeeksInMonth } from "@/utils/dateutils";
 import { MdOutlineEditCalendar } from "react-icons/md";
 import { IoTrashOutline } from "react-icons/io5";
+import { useAuth } from "@/contexts/AuthContext";
 
 const MONTHS_TO_SHOW = 12;
 const CELL_WIDTH = 40;
@@ -28,6 +29,8 @@ export const CalendarioTab: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [currentTask, setCurrentTask] = useState<Tarea | null>(null);
+
+  const { user } = useAuth();
 
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setStartDate(new Date(event.target.value));
@@ -95,9 +98,7 @@ export const CalendarioTab: React.FC = () => {
       finalResult[key] = getWeeksInMonth(month.getFullYear(), month.getMonth());
       /* console.log(getWeeksInMonth(2025, 2)) */
       /* console.log(getWeeksInMonth(2025, 3)) */
-
     });
-
 
     return finalResult;
   }
@@ -172,7 +173,6 @@ export const CalendarioTab: React.FC = () => {
       console.error(err);
     }
   };
-
 
   const tasksByCategory = useMemo<TasksByCategory>(() => {
     const grouped: TasksByCategory = {};
@@ -254,31 +254,39 @@ export const CalendarioTab: React.FC = () => {
                       <div className="w-[125px] border-r border-gray-200 p-2 flex items-center justify-between relative">
                         <span>{tarea.pos}</span>
                         <div className="absolute right-2 transition-all flex bg-white shadow-sm rounded-md">
-                          <button
-                            className="p-1.5 hover:bg-gray-100 rounded-l-md transition-colors"
-                            onClick={() => {
-                              setCurrentTask(tarea);
-                              setModalOpen(true);
-                            }}
-                            title="Editar tarea"
-                          >
-                            <MdOutlineEditCalendar className="w-4 h-4" />
-                          </button>
-                          <button
-                            className="p-1.5 hover:bg-red-50 text-red-600 rounded-r-md transition-colors border-l border-gray-100"
-                            onClick={() => {
-                              if (
-                                window.confirm(
-                                  "¿Seguro que quieres eliminar esta tarea?",
-                                )
-                              ) {
-                                deleteTarea(tarea._id);
-                              }
-                            }}
-                            title="Eliminar tarea"
-                          >
-                            <IoTrashOutline className="w-4 h-4" />
-                          </button>
+                          {user?.roles.map((user, uIndex) =>
+                            user.nombre === "admin" ? (
+                              <>
+                                <button
+                                  className="p-1.5 hover:bg-gray-100 rounded-l-md transition-colors"
+                                  onClick={() => {
+                                    setCurrentTask(tarea);
+                                    setModalOpen(true);
+                                  }}
+                                  title="Editar tarea"
+                                >
+                                  <MdOutlineEditCalendar className="w-4 h-4" />
+                                </button>
+                                <button
+                                  className="p-1.5 hover:bg-red-50 text-red-600 rounded-r-md transition-colors border-l border-gray-100"
+                                  onClick={() => {
+                                    if (
+                                      window.confirm(
+                                        "¿Seguro que quieres eliminar esta tarea?",
+                                      )
+                                    ) {
+                                      deleteTarea(tarea._id);
+                                    }
+                                  }}
+                                  title="Eliminar tarea"
+                                >
+                                  <IoTrashOutline className="w-4 h-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <div key={uIndex}></div>
+                            ),
+                          )}
                         </div>
                       </div>
 
@@ -305,7 +313,6 @@ export const CalendarioTab: React.FC = () => {
                   borderBottom: "2px solid #e2e8f0",
                 }}
               >
-              
                 {Object.entries(monthWeeks).map(([date, weeks]) => (
                   <div
                     key={date}
@@ -318,7 +325,7 @@ export const CalendarioTab: React.FC = () => {
                       {/* {date} */}
                       {format(parseISO(date), "MMMM yyyy", { locale: es })}
                     </div>
-                    
+
                     <div style={{ display: "flex" }}>
                       {weeks.map((sn) => (
                         <div
@@ -375,7 +382,6 @@ export const CalendarioTab: React.FC = () => {
 
                           {/* Task cells */}
                           {cells.map((cell, cellIndex) => {
-                            
                             const mes = tarea.meses.find(
                               (m) => m.mes === cell.month,
                             );
@@ -383,7 +389,7 @@ export const CalendarioTab: React.FC = () => {
                               (s) => s.numero === cell.week,
                             );
 
-                              // console.log(semana?.color)
+                            // console.log(semana?.color)
 
                             return (
                               <div
