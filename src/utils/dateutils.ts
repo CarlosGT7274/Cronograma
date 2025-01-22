@@ -37,4 +37,4 @@ export function getWeeksInMonth(year: number, month: number): number[] {
   return weeks
 }
 
-console.log("Octubre 2024:", getWeeksInMonth(2024, 10))
+console.log("Octubre 2024:", getWeeksInMonth(2024, 9))
